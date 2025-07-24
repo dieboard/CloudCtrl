@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="nl">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Buienalarm POC (Dubbele Drempel)</title>
+    <title>CloudCtrl</title>
     
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -26,31 +26,31 @@
         <div class="mb-6">
              <div class="flex justify-between items-start mb-4">
                  <div>
-                     <h1 class="text-2xl md:text-3xl font-bold text-cyan-400">Buienalarm POC</h1>
-                     <p id="location" class="text-slate-400">Locatie opvragen...</p>
+                     <h1 class="text-2xl md:text-3xl font-bold text-cyan-400">CloudCtrl</h1>
+                     <p id="location" class="text-slate-400">Requesting location...</p>
                      <p id="locationDetails" class="text-xs text-slate-500 mt-1"></p>
                  </div>
                  <div id="status" class="flex items-center gap-2 text-right">
-                      <button id="refreshButton" class="p-2 rounded-full bg-slate-700 hover:bg-slate-600 transition-colors" title="Ververs de data">
+                      <button id="refreshButton" class="p-2 rounded-full bg-slate-700 hover:bg-slate-600 transition-colors" title="Refresh data">
                           <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-arrow-clockwise" viewBox="0 0 16 16"><path fill-rule="evenodd" d="M8 3a5 5 0 1 0 4.546 2.914.5.5 0 0 1 .908-.417A6 6 0 1 1 8 2z"/><path d="M8 4.466V.534a.25.25 0 0 1 .41-.192l2.36 1.966c.12.1.12.284 0 .384L8.41 4.658A.25.25 0 0 1 8 4.466"/></svg>
                       </button>
-                      <div id="statusText"><p class="font-semibold text-slate-300">Laden...</p></div>
+                      <div id="statusText"><p class="font-semibold text-slate-300">Loading...</p></div>
                  </div>
-            </div>
+             </div>
             
-            <form id="locationForm" class="flex flex-col sm:flex-row gap-2">
-                <input type="text" id="locationInput" placeholder="Zoek een plaats of adres..." class="flex-grow bg-slate-700 border border-slate-600 rounded-md px-4 py-2 text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-cyan-500">
-                <button type="submit" class="bg-cyan-600 hover:bg-cyan-700 text-white font-bold py-2 px-4 rounded-md transition-colors">Zoek</button>
-            </form>
+             <form id="locationForm" class="flex flex-col sm:flex-row gap-2">
+                 <input type="text" id="locationInput" placeholder="Search for a city or address..." class="flex-grow bg-slate-700 border border-slate-600 rounded-md px-4 py-2 text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-cyan-500">
+                 <button type="submit" class="bg-cyan-600 hover:bg-cyan-700 text-white font-bold py-2 px-4 rounded-md transition-colors">Search</button>
+             </form>
         </div>
 
         <div class="bg-slate-900/50 p-4 rounded-lg mb-4 text-center">
-            <p id="forecastSummary" class="text-slate-300">Voorspelling wordt geladen...</p>
+            <p id="forecastSummary" class="text-slate-300">Forecast is loading...</p>
         </div>
 
         <div id="viewToggle" class="flex justify-center mb-4 space-x-2">
-            <button id="btnDetail" class="bg-cyan-600 text-white font-semibold py-2 px-4 rounded-md transition-colors text-sm">Detail (6u)</button>
-            <button id="btnOverview" class="bg-slate-700 hover:bg-slate-600 text-white font-semibold py-2 px-4 rounded-md transition-colors text-sm">Overzicht (24u)</button>
+            <button id="btnDetail" class="bg-cyan-600 text-white font-semibold py-2 px-4 rounded-md transition-colors text-sm">Detail (6h)</button>
+            <button id="btnOverview" class="bg-slate-700 hover:bg-slate-600 text-white font-semibold py-2 px-4 rounded-md transition-colors text-sm">Overview (24h)</button>
         </div>
 
         <div class="relative h-64 md:h-96">
@@ -59,14 +59,14 @@
         </div>
         
         <div class="mt-6 space-y-2">
-            <p id="chartLegend" class="text-center text-slate-500 text-sm">Grafiek wordt geladen...</p>
+            <p id="chartLegend" class="text-center text-slate-500 text-sm">Chart is loading...</p>
             <div class="p-4 bg-slate-700/50 rounded-lg grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                    <label for="amountThresholdSlider" class="block text-sm font-medium text-slate-300">Min. hoeveelheid: <span id="amountThresholdValue" class="font-bold text-cyan-400">0.10</span> mm/u</label>
+                    <label for="amountThresholdSlider" class="block text-sm font-medium text-slate-300">Min. amount: <span id="amountThresholdValue" class="font-bold text-cyan-400">0.10</span> mm/h</label>
                     <input type="range" id="amountThresholdSlider" min="0" max="1" step="0.05" value="0.1" class="w-full h-2 bg-slate-600 rounded-lg appearance-none cursor-pointer mt-2">
                 </div>
                 <div>
-                    <label for="probThresholdSlider" class="block text-sm font-medium text-slate-300">Min. kans: <span id="probThresholdValue" class="font-bold text-cyan-400">30</span> %</label>
+                    <label for="probThresholdSlider" class="block text-sm font-medium text-slate-300">Min. chance: <span id="probThresholdValue" class="font-bold text-cyan-400">30</span> %</label>
                     <input type="range" id="probThresholdSlider" min="0" max="100" step="5" value="30" class="w-full h-2 bg-slate-600 rounded-lg appearance-none cursor-pointer mt-2">
                 </div>
             </div>
@@ -74,15 +74,15 @@
     </div>
 
     <script>
-        // --- DOM ELEMENTEN ---
+        // --- DOM ELEMENTS ---
         const chartCanvas = document.getElementById('rainChart'), statusText = document.getElementById('statusText'), locationElement = document.getElementById('location'), locationDetails = document.getElementById('locationDetails'), locationForm = document.getElementById('locationForm'), locationInput = document.getElementById('locationInput'), btnDetail = document.getElementById('btnDetail'), btnOverview = document.getElementById('btnOverview'), chartLegend = document.getElementById('chartLegend'), refreshButton = document.getElementById('refreshButton'), chartLoader = document.getElementById('chartLoader'), forecastSummary = document.getElementById('forecastSummary'), amountThresholdSlider = document.getElementById('amountThresholdSlider'), amountThresholdValue = document.getElementById('amountThresholdValue'), probThresholdSlider = document.getElementById('probThresholdSlider'), probThresholdValue = document.getElementById('probThresholdValue');
 
-        // --- GLOBALE STATE ---
+        // --- GLOBAL STATE ---
         let myChart = null, fullWeatherData = null, currentView = 'detail', currentLocation = { lat: null, lon: null };
 
-        // --- INITIATIE ---
+        // --- INITIALIZATION ---
         document.addEventListener('DOMContentLoaded', () => {
-            if (navigator.geolocation) { updateStatus('Locatie opvragen...', 'yellow'); navigator.geolocation.getCurrentPosition(onGeoSuccess, onGeoError); } else { geocodeAndFetchWeather('Almere'); }
+            if (navigator.geolocation) { updateStatus('Requesting location...', 'yellow'); navigator.geolocation.getCurrentPosition(onGeoSuccess, onGeoError); } else { geocodeAndFetchWeather('London'); }
             locationForm.addEventListener('submit', (e) => { e.preventDefault(); if (locationInput.value) geocodeAndFetchWeather(locationInput.value); });
             btnDetail.addEventListener('click', () => switchView('detail'));
             btnOverview.addEventListener('click', () => switchView('overview'));
@@ -93,17 +93,17 @@
         
         function updateStatus(message, color = 'slate', subtext = '') { const colors = { yellow: 'text-yellow-400', green: 'text-green-400', red: 'text-red-500', slate: 'text-slate-300' }; statusText.innerHTML = `<p class="font-semibold ${colors[color]}">${message}</p>${subtext ? `<p class="text-xs text-slate-400">${subtext}</p>` : ''}`; }
         
-        // --- WEERGAVE & DATA ---
+        // --- VIEW & DATA ---
         function switchView(view) {
             currentView = view;
              if (view === 'detail') {
                  btnDetail.className = 'bg-cyan-600 text-white font-semibold py-2 px-4 rounded-md transition-colors text-sm';
                  btnOverview.className = 'bg-slate-700 hover:bg-slate-600 text-white font-semibold py-2 px-4 rounded-md transition-colors text-sm';
-                 chartLegend.textContent = 'Grafiek toont de verwachte neerslag (mm/u) per 15 min. voor de komende 6 uur.';
+                 chartLegend.textContent = 'Chart shows expected precipitation (mm/h) per 15 min. for the next 6 hours.';
              } else {
                  btnOverview.className = 'bg-cyan-600 text-white font-semibold py-2 px-4 rounded-md transition-colors text-sm';
                  btnDetail.className = 'bg-slate-700 hover:bg-slate-600 text-white font-semibold py-2 px-4 rounded-md transition-colors text-sm';
-                 chartLegend.textContent = 'Grafiek toont de verwachte neerslag (mm/u) per uur voor de komende 24 uur.';
+                 chartLegend.textContent = 'Chart shows expected precipitation (mm/h) per hour for the next 24 hours.';
              }
              updateChartView();
         }
@@ -112,57 +112,56 @@
             const { latitude: lat, longitude: lon } = position.coords;
             currentLocation = { lat, lon };
             try {
-                const url = `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lon}&accept-language=nl`;
+                const url = `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lon}&accept-language=en`;
                 const response = await fetch(url);
                 const data = await response.json();
-                locationElement.textContent = data.display_name || `Huidige Locatie`;
-            } catch { locationElement.textContent = `Huidige Locatie`; }
-            locationDetails.textContent = `Coördinaten: ${lat.toFixed(4)}, ${lon.toFixed(4)}`;
+                locationElement.textContent = data.display_name || `Current Location`;
+            } catch { locationElement.textContent = `Current Location`; }
+            locationDetails.textContent = `Coordinates: ${lat.toFixed(4)}, ${lon.toFixed(4)}`;
             fetchWeatherData(lat, lon);
         }
 
-        function onGeoError(error) { locationElement.textContent = `Kon huidige locatie niet vinden.`; geocodeAndFetchWeather('Utrecht'); }
+        function onGeoError(error) { locationElement.textContent = `Could not find current location.`; geocodeAndFetchWeather('New York'); }
 
         async function geocodeAndFetchWeather(locationName) {
-            updateStatus('Locatie zoeken...', 'yellow');
+            updateStatus('Searching location...', 'yellow');
             chartLoader.style.display = 'flex';
-            forecastSummary.textContent = 'Voorspelling wordt geladen...';
+            forecastSummary.textContent = 'Forecast is loading...';
             try {
-                const geocodeUrl = `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(locationName)}&count=1&language=nl&format=json`;
+                const geocodeUrl = `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(locationName)}&count=1&language=en&format=json`;
                 const response = await fetch(geocodeUrl);
                 const geoData = await response.json();
-                if (!geoData.results?.length) throw new Error('Locatie niet gevonden.');
+                if (!geoData.results?.length) throw new Error('Location not found.');
                 const { name, admin1, country, latitude, longitude } = geoData.results[0];
                 currentLocation = { lat: latitude, lon: longitude };
                 locationElement.textContent = `${name}, ${admin1 || country}`;
-                locationDetails.textContent = `Coördinaten: ${latitude.toFixed(4)}, ${longitude.toFixed(4)}`;
+                locationDetails.textContent = `Coordinates: ${latitude.toFixed(4)}, ${longitude.toFixed(4)}`;
                 fetchWeatherData(latitude, longitude);
-            } catch (error) { updateStatus('Locatiefout', 'red', error.message); chartLoader.style.display = 'none'; }
+            } catch (error) { updateStatus('Location error', 'red', error.message); chartLoader.style.display = 'none'; }
         }
 
         async function fetchWeatherData(latitude, longitude) {
-            updateStatus('Data ophalen...', 'yellow');
+            updateStatus('Fetching data...', 'yellow');
             chartLoader.style.display = 'flex';
-            // AANGEPAST: Vraag nu BEIDE datapunten op
             const apiUrl = `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&hourly=precipitation,precipitation_probability,temperature_2m,weathercode&minutely_15=precipitation,precipitation_probability&forecast_days=2`;
             try {
                 const response = await fetch(apiUrl);
-                if (!response.ok) throw new Error(`Netwerkfout: ${response.statusText}`);
+                if (!response.ok) throw new Error(`Network error: ${response.statusText}`);
                 fullWeatherData = await response.json();
                 switchView(currentView);
                 createForecastSummary();
                 const now = new Date();
-                updateStatus('Geactualiseerd', 'green', now.toLocaleTimeString('nl-NL'));
-            } catch (error) { updateStatus('Ophalen mislukt', 'red', error.message);
+                updateStatus('Updated', 'green', now.toLocaleTimeString('en-US'));
+            } catch (error) { updateStatus('Fetch failed', 'red', error.message);
             } finally { chartLoader.style.display = 'none'; }
         }
         
         function createForecastSummary() {
-            if (!fullWeatherData?.hourly) { forecastSummary.textContent = "Geen voorspelling beschikbaar."; return; }
+            if (!fullWeatherData?.hourly) { forecastSummary.textContent = "No forecast available."; return; }
             const { time, precipitation, temperature_2m, weathercode, precipitation_probability } = fullWeatherData.hourly;
             const now = new Date();
             const startIndex = time.findIndex(t => new Date(t) >= now);
-            if (startIndex === -1) { forecastSummary.textContent = "Voorspelling is voorbij."; return; }
+            if (startIndex === -1) { forecastSummary.textContent = "Forecast is in the past."; return; }
 
             const amountThreshold = parseFloat(amountThresholdSlider.value);
             const probThreshold = parseInt(probThresholdSlider.value);
@@ -170,19 +169,19 @@
             const nextRainIndex = precipitation.slice(startIndex).findIndex((p, i) => p > amountThreshold && precipitation_probability[startIndex + i] > probThreshold);
             
             const currentTemp = Math.round(temperature_2m[startIndex]);
-            const currentDescription = { 0: "Heldere hemel", 1: "Grotendeels helder", 2: "Deels bewolkt", 3: "Bewolkt", 45: "Mist", 61: "Lichte regen", 63: "Matige regen", 65: "Zware regen", 80: "Lichte buien", 81: "Matige buien", 82: "Zware buien" }[weathercode[startIndex]] || "Onbekend";
+            const currentDescription = { 0: "Clear sky", 1: "Mainly clear", 2: "Partly cloudy", 3: "Overcast", 45: "Fog", 61: "Slight rain", 63: "Moderate rain", 65: "Heavy rain", 80: "Slight showers", 81: "Moderate showers", 82: "Violent showers" }[weathercode[startIndex]] || "Unknown";
 
             if (nextRainIndex === -1) {
-                forecastSummary.textContent = `Het blijft de komende uren droog. Het is nu ${currentTemp}°C en ${currentDescription.toLowerCase()}.`;
-            } else if (nextRainIndex < 2) {
-                forecastSummary.textContent = `Het regent nu of zeer binnenkort. Het is ${currentTemp}°C.`;
+                forecastSummary.textContent = `It will remain dry for the next few hours. It is currently ${currentTemp}°C and ${currentDescription.toLowerCase()}.`;
+            } else if (nextRainIndex < 2) { // Raining now or in the next hour
+                forecastSummary.textContent = `It's raining or will be very shortly. Current temperature is ${currentTemp}°C.`;
             } else {
-                const rainTime = new Date(time[startIndex + nextRainIndex]).toLocaleTimeString('nl-NL', { hour: '2-digit', minute: '2-digit' });
-                forecastSummary.textContent = `Het is nu droog (${currentTemp}°C). Rond ${rainTime} wordt regen verwacht.`;
+                const rainTime = new Date(time[startIndex + nextRainIndex]).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+                forecastSummary.textContent = `It's currently dry (${currentTemp}°C). Rain is expected around ${rainTime}.`;
             }
         }
 
-        // --- GRAFIEK LOGICA ---
+        // --- CHART LOGIC ---
         function updateChartView() {
             if (!fullWeatherData) return;
             const apiData = currentView === 'detail' ? fullWeatherData.minutely_15 : fullWeatherData.hourly;
@@ -190,7 +189,6 @@
         }
 
         function processAndDisplayChart(apiData) {
-            // AANGEPAST: controleer op beide datavelden
             if (!apiData?.time || !apiData?.precipitation || !apiData?.precipitation_probability) {
                 if (myChart) myChart.destroy(); return;
             }
@@ -205,9 +203,8 @@
             const sliceCount = currentView === 'detail' ? (6 * 4) + 1 : 25;
             const endIndex = Math.min(startIndex + sliceCount, apiData.time.length);
 
-            const labels = apiData.time.slice(startIndex, endIndex).map(t => new Date(t).toLocaleTimeString('nl-NL', { hour: '2-digit', minute: '2-digit' }));
+            const labels = apiData.time.slice(startIndex, endIndex).map(t => new Date(t).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }));
             
-            // AANGEPAST: DUBBELE FILTER LOGICA
             const amounts = apiData.precipitation.slice(startIndex, endIndex);
             const probabilities = apiData.precipitation_probability.slice(startIndex, endIndex);
             const precipitationData = amounts.map((amount, i) => {
@@ -218,7 +215,7 @@
 
             const isDetailView = currentView === 'detail';
             const datasetOptions = {
-                label: 'Neerslag (mm/u)',
+                label: 'Precipitation (mm/h)',
                 data: precipitationData,
                 backgroundColor: 'rgba(56, 189, 248, 0.4)',
                 borderColor: '#0ea5e9',
@@ -230,11 +227,11 @@
             };
 
             myChart = new Chart(chartCanvas, {
-                type: 'line', // De 'bar' chart is vervangen door een slimmere lijn-grafiek
+                type: 'line',
                 data: { labels: labels, datasets: [datasetOptions] },
                 options: {
                     responsive: true, maintainAspectRatio: false,
-                    plugins: { legend: { display: false }, tooltip: { callbacks: { title: (items) => `Tijd: ${items[0].label}`, label: (item) => `Neerslag: ${item.raw.toFixed(2)} mm/u` } } },
+                    plugins: { legend: { display: false }, tooltip: { callbacks: { title: (items) => `Time: ${items[0].label}`, label: (item) => `Precipitation: ${item.raw.toFixed(2)} mm/h` } } },
                     scales: {
                         x: { ticks: { color: '#94a3b8', maxRotation: 0, autoSkip: true, maxTicksLimit: isDetailView ? 7 : 8 }, grid: { color: 'rgba(255, 255, 255, 0.05)' } },
                         y: { beginAtZero: true, grid: { color: 'rgba(255, 255, 255, 0.1)' }, ticks: { color: '#94a3b8', callback: value => value.toFixed(1) + ' mm' } }
