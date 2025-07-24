@@ -6,7 +6,7 @@
 
 CloudCtrl is a Proof of Concept (POC) web app that visualizes precipitation forecasts from the Open-Meteo API. Its unique feature is the ability to filter the forecast based on a **double threshold**: both the minimum amount of precipitation and the minimum probability of rain.
 
-![Screenshot of the CloudCtrl app](https://imgur.com/yKbldK0)
+![Screenshot of the CloudCtrl app](https://i.imgur.com/yKbldK0.png)
 
 ---
 
