@@ -1,14 +1,14 @@
 # CloudCtrl
 
-![Version](https://img.shields.io/badge/version-0.1.0-blue)
+![Version](https://img.shields.io/badge/version-1.0.0-blue)
 ![License](https://img.shields.io/badge/license-MIT-green)
 
 CloudCtrl is a Proof of Concept (POC) web app that visualizes precipitation forecasts from the Open-Meteo API. Its unique feature is the ability to filter the forecast based on a **double threshold**: both the minimum amount of precipitation and the minimum probability of rain.
 
 ![Screenshot of the CloudCtrl app](images/CloudCtrl.png)
 
-
 ## Table of Contents
+
 - [Concept](#concept)
 - [Features](#features)
 - [Tech Stack](#tech-stack)
@@ -37,8 +37,8 @@ By adjusting sliders for both **amount (mm/h)** and **probability (%)**, you eff
 * **Frontend:** HTML5, Tailwind CSS, vanilla JavaScript (ES6+).
 * **Visualization:** [Chart.js](https://www.chartjs.org/) for the precipitation chart.
 * **APIs:**
-    * **Weather Data:** [Open-Meteo Forecast API](https://open-meteo.com/)
-    * **Geocoding:** [Open-Meteo Geocoding API](https://open-meteo.com/en/docs/geocoding-api) & [Nominatim (OpenStreetMap)](https://nominatim.org/)
+   * **Weather Data:** [Open-Meteo Forecast API](https://open-meteo.com/)
+   * **Geocoding:** [Open-Meteo Geocoding API](https://open-meteo.com/en/docs/geocoding-api) & [Nominatim (OpenStreetMap)](https://nominatim.org/)
 
 ## How to Use
 
@@ -54,4 +54,7 @@ As this is a self-contained webpage with no build process, you can use the proje
 ## License
 
 This project is released under the MIT License. See the `LICENSE` file for more details.
+
+```text
+
 ```
