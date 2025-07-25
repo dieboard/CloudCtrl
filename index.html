@@ -23,6 +23,12 @@
         
         .toggle-checkbox:checked { right: 0; border-color: #0ea5e9; }
         .toggle-checkbox:checked + .toggle-label { background-color: #0ea5e9; }
+
+        /* Stijl voor de details/summary tag voor de legenda */
+        details > summary { list-style: none; }
+        details > summary::-webkit-details-marker { display: none; }
+        details > summary::after { content: ' ▼'; font-size: 0.8em; }
+        details[open] > summary::after { content: ' ▲'; }
     </style>
 </head>
 <body class="bg-slate-900 text-white flex items-center justify-center min-h-screen p-4">
@@ -65,7 +71,13 @@
         </div>
         
         <div class="mt-6 space-y-2">
-            <p id="chartLegend" class="text-center text-slate-500 text-sm">Grafiek wordt geladen...</p>
+            <!-- AANGEPAST: Interactieve legenda -->
+            <details id="intensityLegend" class="bg-slate-700/50 rounded-lg p-3 text-sm">
+                <summary id="legendTitle" class="font-semibold text-slate-300 cursor-pointer">Regenintensiteit Legenda</summary>
+                <ul id="legendList" class="mt-2 space-y-1 text-slate-400">
+                    <!-- Inhoud wordt door JavaScript gevuld -->
+                </ul>
+            </details>
             
             <div class="flex items-center justify-center p-2">
                  <span id="labelOverlayMode" class="mr-3 text-sm font-medium text-slate-400">Overlay Modus</span>
@@ -102,7 +114,6 @@
                 forecast_loading: "Loading forecast...",
                 detail_button: "Detail (6h)",
                 overview_button: "Overview (24h)",
-                chart_loading: "Loading chart...",
                 overlay_mode: "Overlay Mode",
                 filter_mode: "Filter Mode",
                 min_amount_label: "Min. amount: ",
@@ -123,7 +134,16 @@
                 current_location_text: "Current Location",
                 error_location_not_found: "Location not found.",
                 potential_precipitation: "Potential",
-                expected_precipitation: "Expected"
+                expected_precipitation: "Expected",
+                legend_title: "Rain Intensity Legend",
+                intensity_levels: [
+                    { level: "No rain (0.0)", advice: "Dry, no rain gear needed" },
+                    { level: "Very light rain (0.1-0.9)", advice: "Barely noticeable, no gear needed" },
+                    { level: "Light rain (1.0-2.5)", advice: "Umbrella optional" },
+                    { level: "Moderate rain (2.6-7.5)", advice: "Umbrella recommended" },
+                    { level: "Heavy rain (7.6-50)", advice: "Raincoat and umbrella needed" },
+                    { level: "Violent rain (>50)", advice: "Stay indoors if possible" },
+                ]
             },
             nl: {
                 title: "CloudCtrl",
@@ -135,7 +155,6 @@
                 forecast_loading: "Voorspelling wordt geladen...",
                 detail_button: "Detail (6u)",
                 overview_button: "Overzicht (24u)",
-                chart_loading: "Grafiek wordt geladen...",
                 overlay_mode: "Overlay Modus",
                 filter_mode: "Filter Modus",
                 min_amount_label: "Min. hoeveelheid: ",
@@ -156,7 +175,16 @@
                 current_location_text: "Huidige Locatie",
                 error_location_not_found: "Locatie niet gevonden.",
                 potential_precipitation: "Potentieel",
-                expected_precipitation: "Verwacht"
+                expected_precipitation: "Verwacht",
+                legend_title: "Regenintensiteit Legenda",
+                intensity_levels: [
+                    { level: "Geen regen (0.0)", advice: "Droog, geen regenkleding nodig" },
+                    { level: "Zeer lichte regen (0.1-0.9)", advice: "Nauwelijks merkbaar, geen kleding nodig" },
+                    { level: "Lichte regen (1.0-2.5)", advice: "Paraplu optioneel" },
+                    { level: "Matige regen (2.6-7.5)", advice: "Paraplu aanbevolen" },
+                    { level: "Zware regen (7.6-50)", advice: "Regenjas en paraplu nodig" },
+                    { level: "Hevige regen (>50)", advice: "Blijf indien mogelijk binnen" },
+                ]
             }
         };
         const lang = navigator.language.split('-')[0].toLowerCase() === 'nl' ? 'nl' : 'en';
@@ -168,7 +196,8 @@
         
         // --- DOM ELEMENTEN ---
         const allDomElements = {
-            chartCanvas: document.getElementById('rainChart'), statusText: document.getElementById('statusText'), locationElement: document.getElementById('location'), locationDetails: document.getElementById('locationDetails'), locationForm: document.getElementById('locationForm'), locationInput: document.getElementById('locationInput'), btnDetail: document.getElementById('btnDetail'), btnOverview: document.getElementById('btnOverview'), chartLegend: document.getElementById('chartLegend'), refreshButton: document.getElementById('refreshButton'), chartLoader: document.getElementById('chartLoader'), forecastSummary: document.getElementById('forecastSummary'), amountThresholdSlider: document.getElementById('amountThresholdSlider'), amountThresholdValue: document.getElementById('amountThresholdValue'), probThresholdSlider: document.getElementById('probThresholdSlider'), probThresholdValue: document.getElementById('probThresholdValue'), filterToggle: document.getElementById('filterToggle'), filterControls: document.getElementById('filterControls'), appTitle: document.getElementById('appTitle'), searchButton: document.getElementById('searchButton'), labelOverlayMode: document.getElementById('labelOverlayMode'), labelFilterMode: document.getElementById('labelFilterMode'), labelMinAmount: document.getElementById('labelMinAmount'), labelMinProb: document.getElementById('labelMinProb')
+            chartCanvas: document.getElementById('rainChart'), statusText: document.getElementById('statusText'), locationElement: document.getElementById('location'), locationDetails: document.getElementById('locationDetails'), locationForm: document.getElementById('locationForm'), locationInput: document.getElementById('locationInput'), btnDetail: document.getElementById('btnDetail'), btnOverview: document.getElementById('btnOverview'), refreshButton: document.getElementById('refreshButton'), chartLoader: document.getElementById('chartLoader'), forecastSummary: document.getElementById('forecastSummary'), amountThresholdSlider: document.getElementById('amountThresholdSlider'), probThresholdSlider: document.getElementById('probThresholdSlider'), filterToggle: document.getElementById('filterToggle'), filterControls: document.getElementById('filterControls'), appTitle: document.getElementById('appTitle'), searchButton: document.getElementById('searchButton'), labelOverlayMode: document.getElementById('labelOverlayMode'), labelFilterMode: document.getElementById('labelFilterMode'), labelMinAmount: document.getElementById('labelMinAmount'), labelMinProb: document.getElementById('labelMinProb'),
+            legendTitle: document.getElementById('legendTitle'), legendList: document.getElementById('legendList')
         };
 
         // --- GLOBALE STATE ---
@@ -200,13 +229,24 @@
             allDomElements.forecastSummary.textContent = t('forecast_loading');
             allDomElements.btnDetail.textContent = t('detail_button');
             allDomElements.btnOverview.textContent = t('overview_button');
-            allDomElements.chartLegend.textContent = t('chart_loading');
+            allDomElements.legendTitle.textContent = t('legend_title');
             allDomElements.labelOverlayMode.textContent = t('overlay_mode');
             allDomElements.labelFilterMode.textContent = t('filter_mode');
             const currentAmount = allDomElements.amountThresholdSlider.value;
             allDomElements.labelMinAmount.innerHTML = `${t('min_amount_label')}<span id="amountThresholdValue" class="font-bold text-cyan-400">${parseFloat(currentAmount).toFixed(2)}</span> mm/u`;
             const currentProb = allDomElements.probThresholdSlider.value;
             allDomElements.labelMinProb.innerHTML = `${t('min_prob_label')}<span id="probThresholdValue" class="font-bold text-cyan-400">${currentProb}</span> %`;
+            
+            // Vul de legenda
+            const legendLevels = t('intensity_levels');
+            const colors = ['transparent', 'rgba(56, 189, 248, 0.2)', 'rgba(56, 189, 248, 0.4)', 'rgba(56, 189, 248, 0.6)', 'rgba(56, 189, 248, 0.8)', 'rgba(139, 92, 246, 1)'];
+            allDomElements.legendList.innerHTML = legendLevels.map((item, index) => `
+                <li class="flex items-center">
+                    <span class="w-4 h-4 rounded-full mr-2" style="background-color: ${colors[index]}; border: 1px solid #475569;"></span>
+                    <span class="font-semibold">${item.level}:</span>
+                    <span class="ml-1">${item.advice}</span>
+                </li>
+            `).join('');
         }
         
         function updateStatus(message, color = 'slate', subtext = '') { const colors = { yellow: 'text-yellow-400', green: 'text-green-400', red: 'text-red-500', slate: 'text-slate-300' }; allDomElements.statusText.innerHTML = `<p class="font-semibold ${colors[color]}">${message}</p>${subtext ? `<p class="text-xs text-slate-400">${subtext}</p>` : ''}`; }
@@ -297,7 +337,6 @@
         function updateChartView() {
             if (!fullWeatherData) return;
             const apiData = currentView === 'detail' ? fullWeatherData.minutely_15 : fullWeatherData.hourly;
-            allDomElements.chartLegend.textContent = allDomElements.filterToggle.checked ? t('legend_filter') : t('legend_overlay');
             processAndDisplayChart(apiData);
         }
 
@@ -308,30 +347,28 @@
                 const { ctx, chartArea: { top, bottom, left, right }, scales: { y } } = chart;
                 ctx.save();
 
-                const y_zero = y.getPixelForValue(0);
-                const y_light_end = y.getPixelForValue(2);
-                const y_moderate_end = y.getPixelForValue(10);
+                const bands = [
+                    { limit: 0.1, color: 'rgba(56, 189, 248, 0.0)' },   // Geen regen
+                    { limit: 1.0, color: 'rgba(56, 189, 248, 0.05)' }, // Zeer lichte regen
+                    { limit: 2.6, color: 'rgba(56, 189, 248, 0.1)' },  // Lichte regen
+                    { limit: 7.6, color: 'rgba(56, 189, 248, 0.2)' },  // Matige regen
+                    { limit: 50, color: 'rgba(56, 189, 248, 0.3)' },   // Zware regen
+                    { limit: Infinity, color: 'rgba(139, 92, 246, 0.4)' }, // Hevige regen
+                ];
 
-                const lightRainTop = Math.max(y_light_end, top);
-                const moderateRainTop = Math.max(y_moderate_end, top);
-                
-                // Lichte regen zone
-                if (y.max > 0) {
-                    ctx.fillStyle = 'rgba(56, 189, 248, 0.05)';
-                    ctx.fillRect(left, lightRainTop, right - left, y_zero - lightRainTop);
-                }
-                
-                // Matige regen zone
-                if (y.max > 2) {
-                    ctx.fillStyle = 'rgba(56, 189, 248, 0.1)';
-                    ctx.fillRect(left, moderateRainTop, right - left, lightRainTop - moderateRainTop);
-                }
-                
-                // Zware regen zone
-                if (y.max > 10) {
-                    ctx.fillStyle = 'rgba(56, 189, 248, 0.15)';
-                    ctx.fillRect(left, top, right - left, moderateRainTop - top);
-                }
+                let lastY = y.getPixelForValue(0);
+
+                bands.forEach(band => {
+                    if (y.max < band.limit && y.max < bands[bands.indexOf(band)-1]?.limit) return;
+                    
+                    const yPos = y.getPixelForValue(band.limit);
+                    const bandTop = Math.max(yPos, top);
+
+                    ctx.fillStyle = band.color;
+                    ctx.fillRect(left, bandTop, right - left, lastY - bandTop);
+
+                    lastY = bandTop;
+                });
 
                 ctx.restore();
             }
@@ -357,13 +394,12 @@
             const amounts = apiData.precipitation.slice(startIndex, endIndex);
             const probabilities = apiData.precipitation_probability.slice(startIndex, endIndex);
             
-            // AANGEPAST: Logica voor dynamische schaal
             const maxAmountInPeriod = Math.max(...amounts);
             let suggestedMax;
             if (maxAmountInPeriod < 0.2) {
-                suggestedMax = 1.0; // Vaste schaal voor lichte regen
+                suggestedMax = 1.0; 
             } else {
-                suggestedMax = Math.max(2.5, maxAmountInPeriod); // Dynamische schaal voor zwaardere regen
+                suggestedMax = Math.max(2.5, maxAmountInPeriod);
             }
             
             if (allDomElements.filterToggle.checked) {
