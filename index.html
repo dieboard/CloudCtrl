@@ -7,6 +7,8 @@
     
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Plugin voor zoomen en pannen -->
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom@2.0.1/dist/chartjs-plugin-zoom.min.js"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -181,7 +183,7 @@
             allDomElements.locationForm.addEventListener('submit', (e) => { e.preventDefault(); if (allDomElements.locationInput.value) geocodeAndFetchWeather(allDomElements.locationInput.value); });
             allDomElements.btnDetail.addEventListener('click', () => switchView('detail'));
             allDomElements.btnOverview.addEventListener('click', () => switchView('overview'));
-            allDomElements.refreshButton.addEventListener('click', () => { if (currentLocation.lat) fetchWeatherData(currentLocation.lat, currentLocation.lon); });
+            allDomElements.refreshButton.addEventListener('click', () => { if (myChart) { myChart.resetZoom(); } if (currentLocation.lat) { fetchWeatherData(currentLocation.lat, currentLocation.lon); } });
             allDomElements.amountThresholdSlider.addEventListener('input', () => { document.getElementById('amountThresholdValue').textContent = parseFloat(allDomElements.amountThresholdSlider.value).toFixed(2); updateChartView(); });
             allDomElements.probThresholdSlider.addEventListener('input', () => { document.getElementById('probThresholdValue').textContent = allDomElements.probThresholdSlider.value; updateChartView(); });
             allDomElements.filterToggle.addEventListener('change', () => {
@@ -299,6 +301,31 @@
             processAndDisplayChart(apiData);
         }
 
+        // Plugin voor achtergrondbanden
+        const intensityBands = {
+            id: 'intensityBands',
+            beforeDraw(chart, args, options) {
+                const { ctx, chartArea: { top, bottom, left, right }, scales: { y } } = chart;
+                ctx.save();
+                
+                const lightRain = y.getPixelForValue(2);
+                const moderateRain = y.getPixelForValue(10);
+
+                ctx.fillStyle = 'rgba(56, 189, 248, 0.05)';
+                ctx.fillRect(left, lightRain, right - left, bottom - lightRain);
+                
+                ctx.fillStyle = 'rgba(56, 189, 248, 0.1)';
+                ctx.fillRect(left, moderateRain, right - left, lightRain - moderateRain);
+                
+                ctx.fillStyle = 'rgba(56, 189, 248, 0.15)';
+                ctx.fillRect(left, top, right - left, moderateRain - top);
+
+                ctx.restore();
+            }
+        };
+        
+        Chart.register(intensityBands, ChartZoom); // CORRECTED: Use ChartZoom instead of ChartjsPluginZoom.default
+
         function processAndDisplayChart(apiData) {
             if (!apiData?.time || !apiData?.precipitation || !apiData?.precipitation_probability) {
                 if (myChart) myChart.destroy(); return;
@@ -314,15 +341,18 @@
             
             if (myChart) myChart.destroy();
             
+            const amounts = apiData.precipitation.slice(startIndex, endIndex);
+            const probabilities = apiData.precipitation_probability.slice(startIndex, endIndex);
+            
+            const maxAmountInPeriod = Math.max(...amounts);
+            let suggestedMax = Math.max(2.5, maxAmountInPeriod);
+            
             if (allDomElements.filterToggle.checked) {
                 const amountThreshold = parseFloat(allDomElements.amountThresholdSlider.value);
                 const probThreshold = parseInt(allDomElements.probThresholdSlider.value);
-                const amounts = apiData.precipitation.slice(startIndex, endIndex);
-                const probabilities = apiData.precipitation_probability.slice(startIndex, endIndex);
                 
                 const precipitationData = amounts.map((amount, i) => (amount >= amountThreshold && probabilities[i] >= probThreshold) ? amount : 0);
                 
-                const suggestedMax = Math.max(1.0, ...precipitationData);
                 const riskData = amounts.map((amount, i) => {
                     const prob = probabilities[i];
                     if (precipitationData[i] === 0 && prob > 5) {
@@ -366,7 +396,7 @@
                             order: 2
                         }
                     ] },
-                    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false }, tooltip: { filter: (item) => item.datasetIndex === 0, callbacks: { title: (items) => `Time: ${items[0].label}`, label: (item) => { const index = item.dataIndex + startIndex; const originalProb = apiData.precipitation_probability[index]; return item.raw > 0 ? `${t('precipitation')}: ${item.raw.toFixed(2)} mm/h (${t('probability')}: ${originalProb}%)` : null; } } } }, 
+                    options: { responsive: true, maintainAspectRatio: false, plugins: { zoom: { pan: { enabled: true, mode: 'x' }, zoom: { wheel: { enabled: true }, pinch: { enabled: true }, mode: 'x' } }, legend: { display: false }, tooltip: { filter: (item) => item.datasetIndex === 0, callbacks: { title: (items) => `Time: ${items[0].label}`, label: (item) => { const index = item.dataIndex + startIndex; const originalProb = apiData.precipitation_probability[index]; return item.raw > 0 ? `${t('precipitation')}: ${item.raw.toFixed(2)} mm/h (${t('probability')}: ${originalProb}%)` : null; } } } }, 
                     scales: { 
                         x: { ticks: { color: '#94a3b8', maxRotation: 0, autoSkip: true, maxTicksLimit: 7 }, grid: { color: 'rgba(255, 255, 255, 0.05)' } }, 
                         y: { beginAtZero: true, suggestedMax: suggestedMax, grid: { color: 'rgba(255, 255, 255, 0.1)' }, ticks: { color: '#94a3b8', callback: value => value.toFixed(1) + ' mm' } } 
@@ -375,18 +405,10 @@
                 });
 
             } else { // OVERLAY MODUS
-                const amounts = apiData.precipitation.slice(startIndex, endIndex);
-                const probabilities = apiData.precipitation_probability.slice(startIndex, endIndex);
-                
-                const suggestedMaxAmount = Math.max(1.0, ...amounts);
-                
-                // AANGEPASTE LOGICA: Voeg een 'risico vloer' toe
                 const expectedAmountData = amounts.map((amount, i) => {
                     const prob = probabilities[i];
                     const expected = amount * (prob / 100);
-                    // De 'risico vloer' is een klein percentage van de maximale grafiekhoogte, geschaald door de kans.
-                    // Dit maakt een 35% kans op 0mm regen zichtbaar.
-                    const riskFloor = suggestedMaxAmount * (prob / 100) * 0.03;
+                    const riskFloor = suggestedMax * (prob / 100) * 0.03;
                     return Math.max(expected, riskFloor);
                 });
 
@@ -420,6 +442,7 @@
                     options: {
                         responsive: true, maintainAspectRatio: false, interaction: { mode: 'index', intersect: false },
                         plugins: { 
+                            zoom: { pan: { enabled: true, mode: 'x' }, zoom: { wheel: { enabled: true }, pinch: { enabled: true }, mode: 'x' } },
                             legend: { display: true, labels: { color: '#94a3b8' } },
                             tooltip: {
                                 mode: 'index',
@@ -443,7 +466,7 @@
                             x: { ticks: { color: '#94a3b8', maxRotation: 0, autoSkip: true, maxTicksLimit: 7 }, grid: { color: 'rgba(255, 255, 255, 0.05)' } },
                             y: {
                                 beginAtZero: true, 
-                                suggestedMax: suggestedMaxAmount, 
+                                suggestedMax: suggestedMax, 
                                 grid: { color: 'rgba(255, 255, 255, 0.1)' }, 
                                 ticks: { color: '#94a3b8', callback: v => v.toFixed(1) + ' mm' }, 
                                 title: { display: true, text: `${t('precipitation')} (mm/u)`, color: '#94a3b8' } 
