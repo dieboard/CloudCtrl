@@ -7,6 +7,8 @@
     
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Plugin voor zoomen en pannen -->
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom@2.0.1/dist/chartjs-plugin-zoom.min.js"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -181,7 +183,7 @@
             allDomElements.locationForm.addEventListener('submit', (e) => { e.preventDefault(); if (allDomElements.locationInput.value) geocodeAndFetchWeather(allDomElements.locationInput.value); });
             allDomElements.btnDetail.addEventListener('click', () => switchView('detail'));
             allDomElements.btnOverview.addEventListener('click', () => switchView('overview'));
-            allDomElements.refreshButton.addEventListener('click', () => { if (currentLocation.lat) fetchWeatherData(currentLocation.lat, currentLocation.lon); });
+            allDomElements.refreshButton.addEventListener('click', () => { if (myChart) { myChart.resetZoom(); } if (currentLocation.lat) { fetchWeatherData(currentLocation.lat, currentLocation.lon); } });
             allDomElements.amountThresholdSlider.addEventListener('input', () => { document.getElementById('amountThresholdValue').textContent = parseFloat(allDomElements.amountThresholdSlider.value).toFixed(2); updateChartView(); });
             allDomElements.probThresholdSlider.addEventListener('input', () => { document.getElementById('probThresholdValue').textContent = allDomElements.probThresholdSlider.value; updateChartView(); });
             allDomElements.filterToggle.addEventListener('change', () => {
@@ -299,7 +301,7 @@
             processAndDisplayChart(apiData);
         }
 
-        // NIEUWE PLUGIN VOOR ACHTERGRONDBANDEN
+        // Plugin voor achtergrondbanden
         const intensityBands = {
             id: 'intensityBands',
             beforeDraw(chart, args, options) {
@@ -309,15 +311,12 @@
                 const lightRain = y.getPixelForValue(2);
                 const moderateRain = y.getPixelForValue(10);
 
-                // Lichte regen zone
                 ctx.fillStyle = 'rgba(56, 189, 248, 0.05)';
                 ctx.fillRect(left, lightRain, right - left, bottom - lightRain);
                 
-                // Matige regen zone
                 ctx.fillStyle = 'rgba(56, 189, 248, 0.1)';
                 ctx.fillRect(left, moderateRain, right - left, lightRain - moderateRain);
                 
-                // Zware regen zone
                 ctx.fillStyle = 'rgba(56, 189, 248, 0.15)';
                 ctx.fillRect(left, top, right - left, moderateRain - top);
 
@@ -325,7 +324,7 @@
             }
         };
         
-        Chart.register(intensityBands); // Registreer de plugin
+        Chart.register(intensityBands, ChartZoom); // CORRECTED: Use ChartZoom instead of ChartjsPluginZoom.default
 
         function processAndDisplayChart(apiData) {
             if (!apiData?.time || !apiData?.precipitation || !apiData?.precipitation_probability) {
@@ -346,7 +345,7 @@
             const probabilities = apiData.precipitation_probability.slice(startIndex, endIndex);
             
             const maxAmountInPeriod = Math.max(...amounts);
-            let suggestedMax = Math.max(2.5, maxAmountInPeriod); // Zorg dat de eerste band altijd zichtbaar is
+            let suggestedMax = Math.max(2.5, maxAmountInPeriod);
             
             if (allDomElements.filterToggle.checked) {
                 const amountThreshold = parseFloat(allDomElements.amountThresholdSlider.value);
@@ -397,7 +396,7 @@
                             order: 2
                         }
                     ] },
-                    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false }, tooltip: { filter: (item) => item.datasetIndex === 0, callbacks: { title: (items) => `Time: ${items[0].label}`, label: (item) => { const index = item.dataIndex + startIndex; const originalProb = apiData.precipitation_probability[index]; return item.raw > 0 ? `${t('precipitation')}: ${item.raw.toFixed(2)} mm/h (${t('probability')}: ${originalProb}%)` : null; } } } }, 
+                    options: { responsive: true, maintainAspectRatio: false, plugins: { zoom: { pan: { enabled: true, mode: 'x' }, zoom: { wheel: { enabled: true }, pinch: { enabled: true }, mode: 'x' } }, legend: { display: false }, tooltip: { filter: (item) => item.datasetIndex === 0, callbacks: { title: (items) => `Time: ${items[0].label}`, label: (item) => { const index = item.dataIndex + startIndex; const originalProb = apiData.precipitation_probability[index]; return item.raw > 0 ? `${t('precipitation')}: ${item.raw.toFixed(2)} mm/h (${t('probability')}: ${originalProb}%)` : null; } } } }, 
                     scales: { 
                         x: { ticks: { color: '#94a3b8', maxRotation: 0, autoSkip: true, maxTicksLimit: 7 }, grid: { color: 'rgba(255, 255, 255, 0.05)' } }, 
                         y: { beginAtZero: true, suggestedMax: suggestedMax, grid: { color: 'rgba(255, 255, 255, 0.1)' }, ticks: { color: '#94a3b8', callback: value => value.toFixed(1) + ' mm' } } 
@@ -443,6 +442,7 @@
                     options: {
                         responsive: true, maintainAspectRatio: false, interaction: { mode: 'index', intersect: false },
                         plugins: { 
+                            zoom: { pan: { enabled: true, mode: 'x' }, zoom: { wheel: { enabled: true }, pinch: { enabled: true }, mode: 'x' } },
                             legend: { display: true, labels: { color: '#94a3b8' } },
                             tooltip: {
                                 mode: 'index',
