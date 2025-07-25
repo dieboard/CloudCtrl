@@ -299,6 +299,34 @@
             processAndDisplayChart(apiData);
         }
 
+        // NIEUWE PLUGIN VOOR ACHTERGRONDBANDEN
+        const intensityBands = {
+            id: 'intensityBands',
+            beforeDraw(chart, args, options) {
+                const { ctx, chartArea: { top, bottom, left, right }, scales: { y } } = chart;
+                ctx.save();
+                
+                const lightRain = y.getPixelForValue(2);
+                const moderateRain = y.getPixelForValue(10);
+
+                // Lichte regen zone
+                ctx.fillStyle = 'rgba(56, 189, 248, 0.05)';
+                ctx.fillRect(left, lightRain, right - left, bottom - lightRain);
+                
+                // Matige regen zone
+                ctx.fillStyle = 'rgba(56, 189, 248, 0.1)';
+                ctx.fillRect(left, moderateRain, right - left, lightRain - moderateRain);
+                
+                // Zware regen zone
+                ctx.fillStyle = 'rgba(56, 189, 248, 0.15)';
+                ctx.fillRect(left, top, right - left, moderateRain - top);
+
+                ctx.restore();
+            }
+        };
+        
+        Chart.register(intensityBands); // Registreer de plugin
+
         function processAndDisplayChart(apiData) {
             if (!apiData?.time || !apiData?.precipitation || !apiData?.precipitation_probability) {
                 if (myChart) myChart.destroy(); return;
@@ -314,15 +342,18 @@
             
             if (myChart) myChart.destroy();
             
+            const amounts = apiData.precipitation.slice(startIndex, endIndex);
+            const probabilities = apiData.precipitation_probability.slice(startIndex, endIndex);
+            
+            const maxAmountInPeriod = Math.max(...amounts);
+            let suggestedMax = Math.max(2.5, maxAmountInPeriod); // Zorg dat de eerste band altijd zichtbaar is
+            
             if (allDomElements.filterToggle.checked) {
                 const amountThreshold = parseFloat(allDomElements.amountThresholdSlider.value);
                 const probThreshold = parseInt(allDomElements.probThresholdSlider.value);
-                const amounts = apiData.precipitation.slice(startIndex, endIndex);
-                const probabilities = apiData.precipitation_probability.slice(startIndex, endIndex);
                 
                 const precipitationData = amounts.map((amount, i) => (amount >= amountThreshold && probabilities[i] >= probThreshold) ? amount : 0);
                 
-                const suggestedMax = Math.max(1.0, ...precipitationData);
                 const riskData = amounts.map((amount, i) => {
                     const prob = probabilities[i];
                     if (precipitationData[i] === 0 && prob > 5) {
@@ -375,18 +406,10 @@
                 });
 
             } else { // OVERLAY MODUS
-                const amounts = apiData.precipitation.slice(startIndex, endIndex);
-                const probabilities = apiData.precipitation_probability.slice(startIndex, endIndex);
-                
-                const suggestedMaxAmount = Math.max(1.0, ...amounts);
-                
-                // AANGEPASTE LOGICA: Voeg een 'risico vloer' toe
                 const expectedAmountData = amounts.map((amount, i) => {
                     const prob = probabilities[i];
                     const expected = amount * (prob / 100);
-                    // De 'risico vloer' is een klein percentage van de maximale grafiekhoogte, geschaald door de kans.
-                    // Dit maakt een 35% kans op 0mm regen zichtbaar.
-                    const riskFloor = suggestedMaxAmount * (prob / 100) * 0.03;
+                    const riskFloor = suggestedMax * (prob / 100) * 0.03;
                     return Math.max(expected, riskFloor);
                 });
 
@@ -443,7 +466,7 @@
                             x: { ticks: { color: '#94a3b8', maxRotation: 0, autoSkip: true, maxTicksLimit: 7 }, grid: { color: 'rgba(255, 255, 255, 0.05)' } },
                             y: {
                                 beginAtZero: true, 
-                                suggestedMax: suggestedMaxAmount, 
+                                suggestedMax: suggestedMax, 
                                 grid: { color: 'rgba(255, 255, 255, 0.1)' }, 
                                 ticks: { color: '#94a3b8', callback: v => v.toFixed(1) + ' mm' }, 
                                 title: { display: true, text: `${t('precipitation')} (mm/u)`, color: '#94a3b8' } 
