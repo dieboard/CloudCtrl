@@ -307,24 +307,37 @@
             beforeDraw(chart, args, options) {
                 const { ctx, chartArea: { top, bottom, left, right }, scales: { y } } = chart;
                 ctx.save();
-                
-                const lightRain = y.getPixelForValue(2);
-                const moderateRain = y.getPixelForValue(10);
 
-                ctx.fillStyle = 'rgba(56, 189, 248, 0.05)';
-                ctx.fillRect(left, lightRain, right - left, bottom - lightRain);
+                const y_zero = y.getPixelForValue(0);
+                const y_light_end = y.getPixelForValue(2);
+                const y_moderate_end = y.getPixelForValue(10);
+
+                const lightRainTop = Math.max(y_light_end, top);
+                const moderateRainTop = Math.max(y_moderate_end, top);
                 
-                ctx.fillStyle = 'rgba(56, 189, 248, 0.1)';
-                ctx.fillRect(left, moderateRain, right - left, lightRain - moderateRain);
+                // Lichte regen zone
+                if (y.max > 0) {
+                    ctx.fillStyle = 'rgba(56, 189, 248, 0.05)';
+                    ctx.fillRect(left, lightRainTop, right - left, y_zero - lightRainTop);
+                }
                 
-                ctx.fillStyle = 'rgba(56, 189, 248, 0.15)';
-                ctx.fillRect(left, top, right - left, moderateRain - top);
+                // Matige regen zone
+                if (y.max > 2) {
+                    ctx.fillStyle = 'rgba(56, 189, 248, 0.1)';
+                    ctx.fillRect(left, moderateRainTop, right - left, lightRainTop - moderateRainTop);
+                }
+                
+                // Zware regen zone
+                if (y.max > 10) {
+                    ctx.fillStyle = 'rgba(56, 189, 248, 0.15)';
+                    ctx.fillRect(left, top, right - left, moderateRainTop - top);
+                }
 
                 ctx.restore();
             }
         };
         
-        Chart.register(intensityBands, ChartZoom); // CORRECTED: Use ChartZoom instead of ChartjsPluginZoom.default
+        Chart.register(intensityBands, ChartZoom);
 
         function processAndDisplayChart(apiData) {
             if (!apiData?.time || !apiData?.precipitation || !apiData?.precipitation_probability) {
@@ -344,8 +357,14 @@
             const amounts = apiData.precipitation.slice(startIndex, endIndex);
             const probabilities = apiData.precipitation_probability.slice(startIndex, endIndex);
             
+            // AANGEPAST: Logica voor dynamische schaal
             const maxAmountInPeriod = Math.max(...amounts);
-            let suggestedMax = Math.max(2.5, maxAmountInPeriod);
+            let suggestedMax;
+            if (maxAmountInPeriod < 0.2) {
+                suggestedMax = 1.0; // Vaste schaal voor lichte regen
+            } else {
+                suggestedMax = Math.max(2.5, maxAmountInPeriod); // Dynamische schaal voor zwaardere regen
+            }
             
             if (allDomElements.filterToggle.checked) {
                 const amountThreshold = parseFloat(allDomElements.amountThresholdSlider.value);
