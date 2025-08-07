@@ -1,0 +1,520 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CloudCtrl</title>
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom"></script>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        /* Custom styles for the loader */
+        .loader {
+            border-top-color: #3498db;
+            -webkit-animation: spin 1s linear infinite;
+            animation: spin 1s linear infinite;
+        }
+        @-webkit-keyframes spin {
+            0% { -webkit-transform: rotate(0deg); }
+            100% { -webkit-transform: rotate(360deg); }
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        /* Custom styles for range input thumbs */
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 16px;
+            height: 16px;
+            background: #3b82f6;
+            cursor: pointer;
+            border-radius: 50%;
+            margin-top: -6px;
+        }
+        input[type=range]::-moz-range-thumb {
+            width: 16px;
+            height: 16px;
+            background: #3b82f6;
+            cursor: pointer;
+            border-radius: 50%;
+        }
+        /* Custom styles for toggle switch */
+        .toggle-checkbox:checked + .toggle-label {
+            background-color: #3b82f6;
+        }
+        .toggle-checkbox:checked + .toggle-label::after {
+            transform: translateX(100%);
+        }
+    </style>
+</head>
+<body class="bg-gray-900 text-gray-200 flex items-center justify-center min-h-screen p-4">
+
+    <div class="bg-gray-800 rounded-xl shadow-2xl p-6 w-full max-w-4xl">
+
+        <header class="flex justify-between items-center border-b border-gray-700 pb-4 mb-4">
+            <div>
+                <h1 class="text-3xl font-bold text-white">CloudCtrl</h1>
+                <p id="location-display" class="text-gray-400">Requesting location...</p>
+            </div>
+            <div class="flex items-center space-x-3">
+                 <button id="refresh-button" class="text-gray-400 hover:text-white transition-colors" title="Refresh">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h5M20 20v-5h-5M20 4v5h-5M4 20v-5h5m12-5a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                </button>
+                <div id="status-indicator" class="w-4 h-4 rounded-full bg-yellow-500" title="Status: Initializing"></div>
+            </div>
+        </header>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-4">
+             <form id="search-form" class="flex items-center gap-2">
+                <input id="search-input" type="text" placeholder="Search for a city..." class="w-full bg-gray-700 border border-gray-600 rounded-md px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-blue-500">
+                <button type="submit" id="search-button" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-md transition-colors">Search</button>
+            </form>
+            <div class="bg-gray-900 p-3 rounded-md">
+                <p id="forecast-summary" class="text-gray-300 text-sm h-full flex items-center justify-center">Loading forecast...</p>
+            </div>
+        </div>
+
+        <div class="flex justify-center items-center mb-4 bg-gray-700 rounded-lg p-1 max-w-xs mx-auto">
+            <button id="detail-view-btn" class="w-1/2 py-2 px-4 text-sm font-medium rounded-md">Detail (6h)</button>
+            <button id="overview-view-btn" class="w-1/2 py-2 px-4 text-sm font-medium rounded-md">Overview (24h)</button>
+        </div>
+
+        <div class="relative h-96 mb-6">
+            <div id="loader" class="absolute inset-0 bg-gray-800 bg-opacity-75 flex items-center justify-center z-10">
+                <div class="loader ease-linear rounded-full border-8 border-t-8 border-gray-500 h-24 w-24"></div>
+            </div>
+            <canvas id="precipitationChart"></canvas>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 items-center bg-gray-900 p-4 rounded-lg">
+            <div class="flex flex-col items-center justify-center">
+                 <label id="filter-mode-label" for="filter-toggle" class="mb-2 text-sm font-medium text-gray-300">Filter Mode</label>
+                <div class="relative inline-block w-12 mr-2 align-middle select-none transition duration-200 ease-in">
+                    <input type="checkbox" id="filter-toggle" class="toggle-checkbox absolute block w-6 h-6 rounded-full bg-white border-4 appearance-none cursor-pointer" checked>
+                    <label for="filter-toggle" class="toggle-label block overflow-hidden h-6 rounded-full bg-gray-600 cursor-pointer"></label>
+                </div>
+            </div>
+
+            <div class="flex flex-col space-y-2">
+                <label id="amount-slider-label" for="amount-slider" class="text-sm font-medium text-gray-300">Min. amount (mm/h): <span id="amount-value" class="font-bold text-white">0.1</span></label>
+                <input id="amount-slider" type="range" min="0" max="10" step="0.1" value="0.1" class="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer">
+            </div>
+
+            <div class="flex flex-col space-y-2">
+                <label id="prob-slider-label" for="prob-slider" class="text-sm font-medium text-gray-300">Min. probability (%): <span id="prob-value" class="font-bold text-white">20</span></label>
+                <input id="prob-slider" type="range" min="0" max="100" step="1" value="20" class="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer">
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+
+            // STEP 7: INTERNATIONALIZATION (i18n)
+            const translations = {
+                en: {
+                    search: 'Search',
+                    searchInputPlaceholder: 'Search for a city...',
+                    requestingLocation: 'Requesting location...',
+                    statusInitializing: 'Status: Initializing',
+                    statusLoading: 'Status: Loading data...',
+                    statusReady: 'Status: Ready',
+                    statusError: 'Status: Error',
+                    loadingForecast: 'Loading forecast...',
+                    detailView: 'Detail (6h)',
+                    overviewView: 'Overview (24h)',
+                    filterMode: 'Filter Mode',
+                    overlayMode: 'Overlay Mode',
+                    minAmount: (val) => `Min. amount (mm/h): <span class="font-bold text-white">${val}</span>`,
+                    minProbability: (val) => `Min. probability (%): <span class="font-bold text-white">${val}</span>`,
+                    forecastDry: 'It will remain dry for the selected period.',
+                    forecastRain: (time) => `Filtered rain is expected around ${time}.`,
+                    fetchError: (location) => `Could not find weather data for "${location}". Please try another location.`,
+                    geoError: 'Could not get location. Showing default.'
+                },
+                nl: {
+                    search: 'Zoeken',
+                    searchInputPlaceholder: 'Zoek een stad...',
+                    requestingLocation: 'Locatie opvragen...',
+                    statusInitializing: 'Status: Initialiseren',
+                    statusLoading: 'Status: Gegevens laden...',
+                    statusReady: 'Status: Klaar',
+                    statusError: 'Status: Fout',
+                    loadingForecast: 'Voorspelling laden...',
+                    detailView: 'Detail (6u)',
+                    overviewView: 'Overzicht (24u)',
+                    filterMode: 'Filtermodus',
+                    overlayMode: 'Overlay-modus',
+                    minAmount: (val) => `Min. hoeveelheid (mm/u): <span class="font-bold text-white">${val}</span>`,
+                    minProbability: (val) => `Min. kans (%): <span class="font-bold text-white">${val}</span>`,
+                    forecastDry: 'Het blijft droog gedurende de geselecteerde periode.',
+                    forecastRain: (time) => `Gefilterde regen wordt verwacht rond ${time}.`,
+                    fetchError: (location) => `Kon geen weerdata vinden voor "${location}". Probeer een andere locatie.`,
+                    geoError: 'Kon locatie niet ophalen. Standaardlocatie wordt getoond.'
+                }
+            };
+
+            // STEP 3: GLOBAL STATE & DOM CACHE
+            const dom = {
+                locationDisplay: document.getElementById('location-display'),
+                statusIndicator: document.getElementById('status-indicator'),
+                searchForm: document.getElementById('search-form'),
+                searchInput: document.getElementById('search-input'),
+                forecastSummary: document.getElementById('forecast-summary'),
+                detailViewBtn: document.getElementById('detail-view-btn'),
+                overviewViewBtn: document.getElementById('overview-view-btn'),
+                chartCanvas: document.getElementById('precipitationChart'),
+                loader: document.getElementById('loader'),
+                filterToggle: document.getElementById('filter-toggle'),
+                filterModeLabel: document.getElementById('filter-mode-label'),
+                amountSlider: document.getElementById('amount-slider'),
+                probSlider: document.getElementById('prob-slider'),
+                amountValue: document.getElementById('amount-value'),
+                probValue: document.getElementById('prob-value'),
+                amountSliderLabel: document.getElementById('amount-slider-label'),
+                probSliderLabel: document.getElementById('prob-slider-label'),
+                searchButton: document.getElementById('search-button'),
+                refreshButton: document.getElementById('refresh-button'),
+            };
+
+            let chartInstance = null;
+            let fullWeatherData = null;
+            let currentView = 'detail'; // 'detail' or 'overview'
+            let currentLocation = { latitude: 52.1, longitude: 5.1, name: 'Utrecht' }; // Fallback
+            let currentLang = navigator.language.startsWith('nl') ? 'nl' : 'en';
+
+            // i18n HELPER FUNCTIONS
+            const t = (key, ...args) => {
+                const translation = translations[currentLang][key];
+                return typeof translation === 'function' ? translation(...args) : translation;
+            };
+
+            const applyTranslations = () => {
+                dom.searchButton.textContent = t('search');
+                dom.searchInput.placeholder = t('searchInputPlaceholder');
+                dom.locationDisplay.textContent = t('requestingLocation');
+                dom.statusIndicator.title = t('statusInitializing');
+                dom.forecastSummary.textContent = t('loadingForecast');
+                dom.detailViewBtn.textContent = t('detailView');
+                dom.overviewViewBtn.textContent = t('overviewView');
+                updateSliderLabels();
+                updateFilterModeLabel();
+            };
+            
+            // UI UPDATE FUNCTIONS
+
+            const setStatus = (status, title) => {
+                dom.statusIndicator.className = 'w-4 h-4 rounded-full';
+                switch (status) {
+                    case 'loading':
+                        dom.statusIndicator.classList.add('bg-blue-500', 'animate-pulse');
+                        break;
+                    case 'error':
+                        dom.statusIndicator.classList.add('bg-red-500');
+                        break;
+                    case 'ready':
+                        dom.statusIndicator.classList.add('bg-green-500');
+                        break;
+                    default: // initializing
+                        dom.statusIndicator.classList.add('bg-yellow-500');
+                }
+                dom.statusIndicator.title = title;
+            };
+
+            const updateSliderLabels = () => {
+                const amountVal = dom.amountSlider.value;
+                const probVal = dom.probSlider.value;
+                dom.amountValue.textContent = amountVal;
+                dom.probValue.textContent = probVal;
+                // For i18n on slider labels themselves
+                dom.amountSliderLabel.innerHTML = t('minAmount', amountVal);
+                dom.probSliderLabel.innerHTML = t('minProbability', probVal);
+            };
+            
+            const updateFilterModeLabel = () => {
+                 dom.filterModeLabel.textContent = dom.filterToggle.checked ? t('filterMode') : t('overlayMode');
+            }
+
+            // STEP 6: VIEW SWITCHING
+            const switchView = (view) => {
+                currentView = view;
+                if (view === 'detail') {
+                    dom.detailViewBtn.classList.add('bg-blue-600', 'text-white');
+                    dom.overviewViewBtn.classList.remove('bg-blue-600', 'text-white');
+                } else {
+                    dom.overviewViewBtn.classList.add('bg-blue-600', 'text-white');
+                    dom.detailViewBtn.classList.remove('bg-blue-600', 'text-white');
+                }
+                updateChartView();
+            };
+            
+            // STEP 6: FORECAST SUMMARY
+            const createForecastSummary = (data) => {
+                const isFilterMode = dom.filterToggle.checked;
+                if (!isFilterMode) {
+                    dom.forecastSummary.textContent = ''; // Summary is only for filter mode
+                    return;
+                }
+                const minAmount = parseFloat(dom.amountSlider.value);
+                const minProb = parseInt(dom.probSlider.value, 10);
+
+                const firstRainySlot = data.labels.findIndex((label, i) => {
+                    const amount = data.precipitation[i];
+                    const prob = data.probability[i];
+                    return amount >= minAmount && prob >= minProb;
+                });
+
+                if (firstRainySlot !== -1) {
+                    dom.forecastSummary.textContent = t('forecastRain', data.labels[firstRainySlot]);
+                } else {
+                    dom.forecastSummary.textContent = t('forecastDry');
+                }
+            };
+            
+            // STEP 4: API & DATA HANDLING
+
+            const geocodeAndFetchWeather = async (locationName) => {
+                dom.loader.style.display = 'flex';
+                setStatus('loading', t('statusLoading'));
+                try {
+                    const geoResponse = await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(locationName)}&count=1&language=en&format=json`);
+                    const geoData = await geoResponse.json();
+                    if (!geoData.results || geoData.results.length === 0) {
+                        throw new Error('Location not found');
+                    }
+                    const { latitude, longitude, name, admin1 } = geoData.results[0];
+                    currentLocation = { latitude, longitude, name: `${name}, ${admin1 || ''}` };
+                    dom.locationDisplay.textContent = currentLocation.name;
+                    await fetchWeatherData(latitude, longitude);
+                } catch (error) {
+                    console.error('Geocoding error:', error);
+                    alert(t('fetchError', locationName));
+                    setStatus('error', t('statusError'));
+                    dom.loader.style.display = 'none';
+                }
+            };
+
+            const fetchWeatherData = async (latitude, longitude) => {
+                dom.loader.style.display = 'flex';
+                setStatus('loading', t('statusLoading'));
+                const apiUrl = `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&hourly=temperature_2m,precipitation_probability,weathercode,precipitation&minutely_15=precipitation,precipitation_probability,weathercode&timezone=auto&forecast_days=2`;
+                try {
+                    const response = await fetch(apiUrl);
+                    fullWeatherData = await response.json();
+                    updateChartView();
+                    setStatus('ready', t('statusReady'));
+                } catch (error) {
+                    console.error('Weather fetch error:', error);
+                    setStatus('error', t('statusError'));
+                } finally {
+                    dom.loader.style.display = 'none';
+                }
+            };
+
+            // STEP 4, 5, 6: CHARTING LOGIC
+            const updateChartView = () => {
+                if (!fullWeatherData) return;
+                
+                let dataSlice;
+                let labels, precipitation, probability;
+
+                if (currentView === 'detail') {
+                    // 6 hours of 15-min data = 24 data points
+                    const now = new Date(fullWeatherData.minutely_15.time.find(t => new Date(t) >= new Date()));
+                    const startIndex = fullWeatherData.minutely_15.time.indexOf(now.toISOString().slice(0, 16).replace('T', ' '));
+                    const endIndex = startIndex + 24;
+
+                    labels = fullWeatherData.minutely_15.time.slice(startIndex, endIndex).map(t => new Date(t).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }));
+                    precipitation = fullWeatherData.minutely_15.precipitation.slice(startIndex, endIndex);
+                    probability = fullWeatherData.minutely_15.precipitation_probability.slice(startIndex, endIndex);
+                } else { // overview
+                    // 24 hours of hourly data
+                    const now = new Date(fullWeatherData.hourly.time.find(t => new Date(t) >= new Date()));
+                    const startIndex = fullWeatherData.hourly.time.indexOf(now.toISOString().slice(0, 13) + ":00");
+                    const endIndex = startIndex + 24;
+
+                    labels = fullWeatherData.hourly.time.slice(startIndex, endIndex).map(t => new Date(t).toLocaleTimeString([], { weekday: 'short', hour: '2-digit' }));
+                    precipitation = fullWeatherData.hourly.precipitation.slice(startIndex, endIndex);
+                    probability = fullWeatherData.hourly.precipitation_probability.slice(startIndex, endIndex);
+                }
+                
+                dataSlice = { labels, precipitation, probability };
+                createForecastSummary(dataSlice);
+                processAndDisplayChart(dataSlice);
+            };
+
+            const processAndDisplayChart = (data) => {
+                if (chartInstance) {
+                    chartInstance.destroy();
+                }
+
+                const isFilterMode = dom.filterToggle.checked;
+                let datasets;
+
+                if (isFilterMode) {
+                    // STEP 5: FILTER MODE
+                    const minAmount = parseFloat(dom.amountSlider.value);
+                    const minProb = parseInt(dom.probSlider.value, 10);
+                    
+                    const filteredPrecipitation = data.precipitation.map((amount, i) => {
+                        return (amount >= minAmount && data.probability[i] >= minProb) ? amount : 0;
+                    });
+
+                    datasets = [{
+                        label: 'Filtered Precipitation (mm)',
+                        data: filteredPrecipitation,
+                        backgroundColor: data.probability.map(prob => `rgba(59, 130, 246, ${prob / 100})`),
+                        borderColor: data.probability.map(prob => `rgba(96, 165, 250, ${prob / 100})`),
+                        borderWidth: 1,
+                        barPercentage: 0.9,
+                        categoryPercentage: 0.8
+                    }];
+                } else {
+                    // STEP 6: OVERLAY MODE
+                    const expectedPrecipitation = data.precipitation.map((amount, i) => {
+                        return (amount * data.probability[i]) / 100;
+                    });
+
+                    datasets = [{
+                        label: 'Potential (mm)',
+                        data: data.precipitation,
+                        backgroundColor: 'rgba(107, 114, 128, 0.5)',
+                        borderColor: 'rgba(156, 163, 175, 0.7)',
+                        borderWidth: 1,
+                        barPercentage: 0.9,
+                        categoryPercentage: 0.8
+                    }, {
+                        label: 'Expected (mm)',
+                        data: expectedPrecipitation,
+                        backgroundColor: 'rgba(59, 130, 246, 0.7)',
+                        borderColor: 'rgba(96, 165, 250, 1)',
+                        borderWidth: 1,
+                        barPercentage: 0.9,
+                        categoryPercentage: 0.8
+                    }];
+                }
+                
+                const chartData = {
+                    labels: data.labels,
+                    datasets: datasets
+                };
+
+                chartInstance = new Chart(dom.chartCanvas, {
+                    type: 'bar',
+                    data: chartData,
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                title: { display: true, text: 'Precipitation (mm)' },
+                                ticks: { color: '#9ca3af' },
+                                grid: { color: 'rgba(255, 255, 255, 0.1)' }
+                            },
+                            x: {
+                                ticks: { color: '#9ca3af' },
+                                grid: { color: 'rgba(255, 255, 255, 0.1)' }
+                            }
+                        },
+                        plugins: {
+                            legend: { labels: { color: '#d1d5db' } },
+                            tooltip: {
+                                mode: 'index',
+                                intersect: false,
+                                callbacks: {
+                                    footer: (tooltipItems) => {
+                                        const index = tooltipItems[0].dataIndex;
+                                        return `Probability: ${data.probability[index]}%`;
+                                    }
+                                }
+                            },
+                            zoom: {
+                                pan: { enabled: true, mode: 'x' },
+                                zoom: { wheel: { enabled: true }, pinch: { enabled: true }, mode: 'x' }
+                            }
+                        }
+                    }
+                });
+            };
+
+            // INITIALIZATION
+            
+            // Geolocation Callbacks
+            const onGeoSuccess = (position) => {
+                const { latitude, longitude } = position.coords;
+                // Reverse geocode to get city name
+                fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}`)
+                    .then(res => res.json())
+                    .then(data => {
+                        const city = data.address.city || data.address.town || data.address.village || 'Current Location';
+                        currentLocation = { latitude, longitude, name: city };
+                        dom.locationDisplay.textContent = city;
+                        fetchWeatherData(latitude, longitude);
+                    })
+                    .catch(() => { // Fallback if reverse geocoding fails
+                       dom.locationDisplay.textContent = 'Current Location';
+                       fetchWeatherData(latitude, longitude);
+                    });
+            };
+            const onGeoError = () => {
+                alert(t('geoError'));
+                dom.locationDisplay.textContent = currentLocation.name;
+                fetchWeatherData(currentLocation.latitude, currentLocation.longitude);
+            };
+
+            // Event Listeners
+            dom.searchForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                const searchTerm = dom.searchInput.value.trim();
+                if (searchTerm) {
+                    geocodeAndFetchWeather(searchTerm);
+                }
+            });
+
+            dom.detailViewBtn.addEventListener('click', () => switchView('detail'));
+            dom.overviewViewBtn.addEventListener('click', () => switchView('overview'));
+            
+            const sliderUpdateHandler = () => {
+                updateSliderLabels();
+                updateChartView();
+            };
+            dom.amountSlider.addEventListener('input', updateSliderLabels);
+            dom.probSlider.addEventListener('input', updateSliderLabels);
+            dom.amountSlider.addEventListener('change', sliderUpdateHandler);
+            dom.probSlider.addEventListener('change', sliderUpdateHandler);
+            
+            dom.filterToggle.addEventListener('change', () => {
+                updateFilterModeLabel();
+                updateChartView();
+            });
+
+            dom.refreshButton.addEventListener('click', () => {
+                fetchWeatherData(currentLocation.latitude, currentLocation.longitude);
+            });
+
+            // Run on Load
+            applyTranslations();
+            switchView('detail'); // Set initial button style
+
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(onGeoSuccess, onGeoError);
+            } else {
+                onGeoError(); // Geolocation not supported
+            }
+        });
+    </script>
+</body>
+</html>
