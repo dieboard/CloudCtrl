@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>CloudCtrl</title>
-    
+
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <!-- Plugin voor zoomen en pannen -->
@@ -17,10 +17,10 @@
         body { font-family: 'Inter', sans-serif; }
         .loader { border: 4px solid rgba(255, 255, 255, 0.2); border-left-color: #0ea5e9; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; }
         @keyframes spin { to { transform: rotate(360deg); } }
-        
+
         input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 20px; height: 20px; background: #0ea5e9; cursor: pointer; border-radius: 50%; margin-top: -6px; }
         input[type=range]::-moz-range-thumb { width: 20px; height: 20px; background: #0ea5e9; cursor: pointer; border-radius: 50%; }
-        
+
         .toggle-checkbox:checked { right: 0; border-color: #0ea5e9; }
         .toggle-checkbox:checked + .toggle-label { background-color: #0ea5e9; }
 
@@ -34,7 +34,7 @@
 <body class="bg-slate-900 text-white flex items-center justify-center min-h-screen p-4">
 
     <div class="w-full max-w-4xl bg-slate-800 rounded-2xl shadow-lg p-6 md:p-8">
-        
+
         <div class="mb-6">
              <div class="flex justify-between items-start mb-4">
                  <div>
@@ -49,7 +49,7 @@
                       <div id="statusText"><p class="font-semibold text-slate-300">Laden...</p></div>
                  </div>
             </div>
-            
+
             <form id="locationForm" class="flex flex-col sm:flex-row gap-2">
                 <input type="text" id="locationInput" placeholder="Zoek een plaats of adres..." class="flex-grow bg-slate-700 border border-slate-600 rounded-md px-4 py-2 text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-cyan-500">
                 <button type="submit" id="searchButton" class="bg-cyan-600 hover:bg-cyan-700 text-white font-bold py-2 px-4 rounded-md transition-colors">Zoek</button>
@@ -69,7 +69,7 @@
             <div id="chartLoader" class="absolute inset-0 flex items-center justify-center bg-slate-800/50 backdrop-blur-sm z-10 rounded-lg" style="display: none;"><div class="loader"></div></div>
             <canvas id="rainChart"></canvas>
         </div>
-        
+
         <div class="mt-6 space-y-2">
             <!-- AANGEPAST: Interactieve legenda -->
             <details id="intensityLegend" class="bg-slate-700/50 rounded-lg p-3 text-sm">
@@ -78,7 +78,7 @@
                     <!-- Inhoud wordt door JavaScript gevuld -->
                 </ul>
             </details>
-            
+
             <div class="flex items-center justify-center p-2">
                  <span id="labelOverlayMode" class="mr-3 text-sm font-medium text-slate-400">Overlay Modus</span>
                 <div class="relative inline-block w-10 align-middle select-none">
@@ -193,7 +193,7 @@
             if (typeof template === 'function') return template(...args);
             return template;
         };
-        
+
         // --- DOM ELEMENTEN ---
         const allDomElements = {
             chartCanvas: document.getElementById('rainChart'), statusText: document.getElementById('statusText'), locationElement: document.getElementById('location'), locationDetails: document.getElementById('locationDetails'), locationForm: document.getElementById('locationForm'), locationInput: document.getElementById('locationInput'), btnDetail: document.getElementById('btnDetail'), btnOverview: document.getElementById('btnOverview'), refreshButton: document.getElementById('refreshButton'), chartLoader: document.getElementById('chartLoader'), forecastSummary: document.getElementById('forecastSummary'), amountThresholdSlider: document.getElementById('amountThresholdSlider'), probThresholdSlider: document.getElementById('probThresholdSlider'), filterToggle: document.getElementById('filterToggle'), filterControls: document.getElementById('filterControls'), appTitle: document.getElementById('appTitle'), searchButton: document.getElementById('searchButton'), labelOverlayMode: document.getElementById('labelOverlayMode'), labelFilterMode: document.getElementById('labelFilterMode'), labelMinAmount: document.getElementById('labelMinAmount'), labelMinProb: document.getElementById('labelMinProb'),
@@ -201,7 +201,8 @@
         };
 
         // --- GLOBALE STATE ---
-        let myChart = null, fullWeatherData = null, currentView = 'detail', currentLocation = { lat: null, lon: null };
+        var myChart = null; // Exposed for testing
+        let fullWeatherData = null, currentView = 'detail', currentLocation = { lat: null, lon: null };
 
         // --- INITIATIE ---
         document.addEventListener('DOMContentLoaded', () => {
@@ -236,7 +237,7 @@
             allDomElements.labelMinAmount.innerHTML = `${t('min_amount_label')}<span id="amountThresholdValue" class="font-bold text-cyan-400">${parseFloat(currentAmount).toFixed(2)}</span> mm/u`;
             const currentProb = allDomElements.probThresholdSlider.value;
             allDomElements.labelMinProb.innerHTML = `${t('min_prob_label')}<span id="probThresholdValue" class="font-bold text-cyan-400">${currentProb}</span> %`;
-            
+
             // Vul de legenda
             const legendLevels = t('intensity_levels');
             const colors = ['transparent', 'rgba(56, 189, 248, 0.2)', 'rgba(56, 189, 248, 0.4)', 'rgba(56, 189, 248, 0.6)', 'rgba(56, 189, 248, 0.8)', 'rgba(139, 92, 246, 1)'];
@@ -248,9 +249,9 @@
                 </li>
             `).join('');
         }
-        
+
         function updateStatus(message, color = 'slate', subtext = '') { const colors = { yellow: 'text-yellow-400', green: 'text-green-400', red: 'text-red-500', slate: 'text-slate-300' }; allDomElements.statusText.innerHTML = `<p class="font-semibold ${colors[color]}">${message}</p>${subtext ? `<p class="text-xs text-slate-400">${subtext}</p>` : ''}`; }
-        
+
         function switchView(view) {
             currentView = view;
              if (view === 'detail') {
@@ -310,7 +311,7 @@
             } catch (error) { updateStatus(t('fetch_error'), 'red', error.message);
             } finally { allDomElements.chartLoader.style.display = 'none'; }
         }
-        
+
         function createForecastSummary() {
              if (!fullWeatherData?.hourly) { allDomElements.forecastSummary.textContent = "Geen voorspelling beschikbaar."; return; }
             const { time, precipitation, temperature_2m, weathercode, precipitation_probability } = fullWeatherData.hourly;
@@ -360,7 +361,7 @@
 
                 bands.forEach(band => {
                     if (y.max < band.limit && y.max < bands[bands.indexOf(band)-1]?.limit) return;
-                    
+
                     const yPos = y.getPixelForValue(band.limit);
                     const bandTop = Math.max(yPos, top);
 
@@ -373,14 +374,14 @@
                 ctx.restore();
             }
         };
-        
+
         Chart.register(intensityBands, ChartZoom);
 
         function processAndDisplayChart(apiData) {
             if (!apiData?.time || !apiData?.precipitation || !apiData?.precipitation_probability) {
                 if (myChart) myChart.destroy(); return;
             }
-            
+
             const now = new Date();
             let startIndex = apiData.time.findIndex(t => new Date(t) >= now);
             if (startIndex > 0) startIndex--;
@@ -388,26 +389,26 @@
             const sliceCount = currentView === 'detail' ? (6 * 4) + 1 : 25;
             const endIndex = Math.min(startIndex + sliceCount, apiData.time.length);
             const labels = apiData.time.slice(startIndex, endIndex).map(t => new Date(t).toLocaleTimeString(lang, { hour: '2-digit', minute: '2-digit' }));
-            
+
             if (myChart) myChart.destroy();
-            
+
             const amounts = apiData.precipitation.slice(startIndex, endIndex);
             const probabilities = apiData.precipitation_probability.slice(startIndex, endIndex);
-            
+
             const maxAmountInPeriod = Math.max(...amounts);
             let suggestedMax;
             if (maxAmountInPeriod < 0.2) {
-                suggestedMax = 1.0; 
+                suggestedMax = 1.0;
             } else {
                 suggestedMax = Math.max(2.5, maxAmountInPeriod);
             }
-            
+
             if (allDomElements.filterToggle.checked) {
                 const amountThreshold = parseFloat(allDomElements.amountThresholdSlider.value);
                 const probThreshold = parseInt(allDomElements.probThresholdSlider.value);
-                
+
                 const precipitationData = amounts.map((amount, i) => (amount >= amountThreshold && probabilities[i] >= probThreshold) ? amount : 0);
-                
+
                 const riskData = amounts.map((amount, i) => {
                     const prob = probabilities[i];
                     if (precipitationData[i] === 0 && prob > 5) {
@@ -451,11 +452,11 @@
                             order: 2
                         }
                     ] },
-                    options: { responsive: true, maintainAspectRatio: false, plugins: { zoom: { pan: { enabled: true, mode: 'x' }, zoom: { wheel: { enabled: true }, pinch: { enabled: true }, mode: 'x' } }, legend: { display: false }, tooltip: { filter: (item) => item.datasetIndex === 0, callbacks: { title: (items) => `Time: ${items[0].label}`, label: (item) => { const index = item.dataIndex + startIndex; const originalProb = apiData.precipitation_probability[index]; return item.raw > 0 ? `${t('precipitation')}: ${item.raw.toFixed(2)} mm/h (${t('probability')}: ${originalProb}%)` : null; } } } }, 
-                    scales: { 
-                        x: { ticks: { color: '#94a3b8', maxRotation: 0, autoSkip: true, maxTicksLimit: 7 }, grid: { color: 'rgba(255, 255, 255, 0.05)' } }, 
-                        y: { beginAtZero: true, suggestedMax: suggestedMax, grid: { color: 'rgba(255, 255, 255, 0.1)' }, ticks: { color: '#94a3b8', callback: value => value.toFixed(1) + ' mm' } } 
-                        } 
+                    options: { responsive: true, maintainAspectRatio: false, plugins: { zoom: { pan: { enabled: true, mode: 'x' }, zoom: { wheel: { enabled: true }, pinch: { enabled: true }, mode: 'x' } }, legend: { display: false }, tooltip: { filter: (item) => item.datasetIndex === 0, callbacks: { title: (items) => `Time: ${items[0].label}`, label: (item) => { const index = item.dataIndex + startIndex; const originalProb = apiData.precipitation_probability[index]; return item.raw > 0 ? `${t('precipitation')}: ${item.raw.toFixed(2)} mm/h (${t('probability')}: ${originalProb}%)` : null; } } } },
+                    scales: {
+                        x: { ticks: { color: '#94a3b8', maxRotation: 0, autoSkip: true, maxTicksLimit: 7 }, grid: { color: 'rgba(255, 255, 255, 0.05)' } },
+                        y: { beginAtZero: true, suggestedMax: suggestedMax, grid: { color: 'rgba(255, 255, 255, 0.1)' }, ticks: { color: '#94a3b8', callback: value => value.toFixed(1) + ' mm' } }
+                        }
                     }
                 });
 
@@ -496,7 +497,7 @@
                     },
                     options: {
                         responsive: true, maintainAspectRatio: false, interaction: { mode: 'index', intersect: false },
-                        plugins: { 
+                        plugins: {
                             zoom: { pan: { enabled: true, mode: 'x' }, zoom: { wheel: { enabled: true }, pinch: { enabled: true }, mode: 'x' } },
                             legend: { display: true, labels: { color: '#94a3b8' } },
                             tooltip: {
@@ -520,11 +521,11 @@
                         scales: {
                             x: { ticks: { color: '#94a3b8', maxRotation: 0, autoSkip: true, maxTicksLimit: 7 }, grid: { color: 'rgba(255, 255, 255, 0.05)' } },
                             y: {
-                                beginAtZero: true, 
-                                suggestedMax: suggestedMax, 
-                                grid: { color: 'rgba(255, 255, 255, 0.1)' }, 
-                                ticks: { color: '#94a3b8', callback: v => v.toFixed(1) + ' mm' }, 
-                                title: { display: true, text: `${t('precipitation')} (mm/u)`, color: '#94a3b8' } 
+                                beginAtZero: true,
+                                suggestedMax: suggestedMax,
+                                grid: { color: 'rgba(255, 255, 255, 0.1)' },
+                                ticks: { color: '#94a3b8', callback: v => v.toFixed(1) + ' mm' },
+                                title: { display: true, text: `${t('precipitation')} (mm/u)`, color: '#94a3b8' }
                             }
                         }
                     }
