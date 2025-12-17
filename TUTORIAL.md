@@ -12,6 +12,7 @@ Instead of just checking if "some bars appear on the chart", we check if "the *c
 
 ## Prerequisites
 
+*   **Postman** (for independent API exploration)
 *   **Python 3.8+**
 *   **Node.js 18+** (required for Robot Framework Browser library)
 
@@ -33,7 +34,24 @@ Instead of just checking if "some bars appear on the chart", we check if "the *c
     rfbrowser init
     ```
 
-## Running the Application
+## Step 1: Independent API Testing with Postman
+
+Before diving into complex E2E tests, it's best practice to ensure the backend APIs are behaving as expected. We can use Postman for this.
+
+1.  **Open Postman** and click **Import**.
+2.  Select the file `tests/CloudCtrl.postman_collection.json` from this repository.
+3.  You will see a collection named **CloudCtrl Weather APIs**.
+4.  Run the requests:
+    *   **Geocoding (Search for City):** Verifies that searching for "Utrecht" returns valid coordinates.
+    *   **Forecast (Precipitation):** Uses the coordinates to fetch the rain forecast.
+
+This step confirms that our "Source of Truth" (the Open-Meteo API) is available and returning the data structure we expect.
+
+## Step 2: Automating E2E & Hybrid Flows
+
+Now that we know the API works, we can move to the automated Hybrid Test using Robot Framework.
+
+### Running the Application
 
 Since CloudCtrl is a static web application, you need to serve it locally so the test automation can access it via a URL (e.g., `http://localhost:8000`).
 
@@ -46,18 +64,18 @@ python3 -m http.server 8000
 
 Open [http://localhost:8000](http://localhost:8000) in your browser to manually verify it's working.
 
-## The Test Case
+### The Robot Framework Test Case
 
 We have included a sample test in `tests/test_weather_app.robot`. Here is a breakdown of what it does:
 
-### 1. Fetch Source of Truth
+#### 1. Fetch Source of Truth
 We use `RequestsLibrary` to call the Open-Meteo API directly. This gives us the raw weather data that the app *should* be displaying.
 
 ```robot
 ${api_data}=    Get Weather Data From API    ${LOCATION}
 ```
 
-### 2. Drive the UI
+#### 2. Drive the UI
 We use `Browser` library to open the app and search for a location.
 
 ```robot
@@ -66,7 +84,7 @@ Type Text   id=locationInput    ${LOCATION}
 Click       id=searchButton
 ```
 
-### 3. Inspect Internal State (The "White-Box" Magic)
+#### 3. Inspect Internal State (The "White-Box" Magic)
 This is the key part of hybrid testing. Instead of trying to count pixels on a canvas (which is flaky), we access the internal JavaScript state of the application. The CloudCtrl app exposes its chart instance globally as `window.myChart`.
 
 We use `Evaluate JavaScript` to extract the data directly from the chart object.
@@ -76,10 +94,10 @@ ${ui_chart_data}=    Evaluate JavaScript    id=rainChart
 ...    (element) => window.myChart.data.datasets[0].data
 ```
 
-### 4. Verify
+#### 4. Verify
 Finally, we compare the data from the API with the data extracted from the Chart.js instance.
 
-## Running the Test
+### Running the Test
 
 With your local server running in one terminal, run the test in another:
 

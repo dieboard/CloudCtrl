@@ -1,0 +1,142 @@
+{
+	"info": {
+		"_postman_id": "cloudctrl-collection-id",
+		"name": "CloudCtrl Weather APIs",
+		"description": "A collection to independently verify the Open-Meteo APIs used by CloudCtrl.",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Geocoding (Search for City)",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code is 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"pm.test(\"Response returns results\", function () {",
+							"    var jsonData = pm.response.json();",
+							"    pm.expect(jsonData.results).to.be.an('array');",
+							"    pm.expect(jsonData.results.length).to.be.above(0);",
+							"});",
+							"",
+							"pm.test(\"First result is correct city\", function () {",
+							"    var jsonData = pm.response.json();",
+							"    pm.expect(jsonData.results[0].name).to.eql(\"Utrecht\");",
+							"    // Save lat/lon for next request",
+							"    pm.environment.set(\"lat\", jsonData.results[0].latitude);",
+							"    pm.environment.set(\"lon\", jsonData.results[0].longitude);",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "https://geocoding-api.open-meteo.com/v1/search?name=Utrecht&count=1&language=en&format=json",
+					"protocol": "https",
+					"host": [
+						"geocoding-api",
+						"open-meteo",
+						"com"
+					],
+					"path": [
+						"v1",
+						"search"
+					],
+					"query": [
+						{
+							"key": "name",
+							"value": "Utrecht"
+						},
+						{
+							"key": "count",
+							"value": "1"
+						},
+						{
+							"key": "language",
+							"value": "en"
+						},
+						{
+							"key": "format",
+							"value": "json"
+						}
+					]
+				},
+				"description": "Fetches the coordinates for 'Utrecht'."
+			},
+			"response": []
+		},
+		{
+			"name": "Forecast (Precipitation)",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code is 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"pm.test(\"Response has hourly data\", function () {",
+							"    var jsonData = pm.response.json();",
+							"    pm.expect(jsonData).to.have.property('hourly');",
+							"    pm.expect(jsonData.hourly).to.have.property('precipitation');",
+							"    pm.expect(jsonData.hourly).to.have.property('precipitation_probability');",
+							"});",
+							"",
+							"pm.test(\"Data arrays are not empty\", function () {",
+							"    var jsonData = pm.response.json();",
+							"    pm.expect(jsonData.hourly.precipitation.length).to.be.above(0);",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "https://api.open-meteo.com/v1/forecast?latitude=52.0908&longitude=5.1222&hourly=precipitation,precipitation_probability&forecast_days=2",
+					"protocol": "https",
+					"host": [
+						"api",
+						"open-meteo",
+						"com"
+					],
+					"path": [
+						"v1",
+						"forecast"
+					],
+					"query": [
+						{
+							"key": "latitude",
+							"value": "52.0908"
+						},
+						{
+							"key": "longitude",
+							"value": "5.1222"
+						},
+						{
+							"key": "hourly",
+							"value": "precipitation,precipitation_probability"
+						},
+						{
+							"key": "forecast_days",
+							"value": "2"
+						}
+					]
+				},
+				"description": "Fetches the precipitation forecast for the coordinates."
+			},
+			"response": []
+		}
+	]
+}
