@@ -112,4 +112,36 @@ You should see the browser open (headless by default, remove `headless=True` in 
 Try extending the test suite:
 1.  **Verify Filtering:** Add a test that changes the sliders in the UI and asserts that the `ui_chart_data` updates correctly to filter out low precipitation values.
 2.  **Overlay Mode:** Switch the toggle to "Overlay Mode" and verify that the chart displays two datasets (Potential vs Expected).
-3.  **Mocking:** Use the `Browser` library's network interception features to mock the API response. This allows you to test edge cases (e.g., a massive storm) without waiting for bad weather!
+3.  **Mocking:** Use the `Browser` library's features to mock the API response. This allows you to test edge cases (e.g., a massive storm) without waiting for bad weather!
+
+## Step 3: Advanced Mocking with Playwright
+
+Sometimes you want to test scenarios that are hard to find in real life, like a massive storm or an API server failure. This is where **Mocking** comes in.
+
+Instead of hitting the real Open-Meteo API, we intercept the network request within the browser and return our own custom response. This is "Advanced" because it allows for deterministic testing of edge cases.
+
+### The Mocking Test Case (`tests/test_mocking.robot`)
+
+This test suite demonstrates two scenarios:
+
+1.  **Simulate Stormy Weather:** We load a JSON fixture (`tests/fixtures/weather_storm.json`) that contains fake data with very high precipitation. We tell the browser: "When you see a request for the forecast, don't go to the internet. Give back this JSON instead."
+2.  **Simulate API Failure:** We tell the browser to simulate a 500 Internal Server Error, allowing us to verify the app's error handling.
+
+### The Mocking Strategy: Monkey Patching `window.fetch`
+
+Since we want to control exactly what the browser receives, we can use a technique called **Monkey Patching**. We replace the browser's built-in `fetch` function with our own version.
+
+1.  **Original Fetch:** We save `window.originalFetch = window.fetch`.
+2.  **Mock Fetch:** We overwrite `window.fetch` with a function that checks the URL.
+3.  **Intercept:** If the URL matches our API (`v1/forecast`), we return a fake response object constructed from our JSON fixture.
+4.  **Passthrough:** If it's any other URL (like OpenStreetMap), we call the original fetch so the map still loads.
+
+This is implemented using the `Evaluate JavaScript` keyword in Robot Framework to inject the mock logic directly into the running browser page.
+
+### Running the Test
+
+With your local server running in one terminal, run the test in another:
+
+```bash
+robot tests/test_mocking.robot
+```
