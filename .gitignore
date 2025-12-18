@@ -1,0 +1,18 @@
+# Robot Framework artifacts
+log.html
+output.xml
+report.html
+playwright-log.txt
+
+# Server logs
+server.log
+
+# Python virtual environment
+venv/
+__pycache__/
+
+# Node modules
+node_modules/
+
+# OS generated files
+.DS_Store

@@ -17,6 +17,7 @@ The interface has evolved to provide a clearer and more intuitive representation
 - [Features](#features)
 - [Tech Stack](#tech-stack)
 - [How to Use](#how-to-use)
+- [Learning: Hybrid API & E2E Testing](#learning-hybrid-api--e2e-testing)
 - [Build-Me Tutorial](#build-me-tutorial)
 - [Changelog](#changelog)
 - [License](#license)
@@ -50,6 +51,14 @@ By adjusting sliders for both **amount (mm/h)** and **probability (%)**, you eff
 ## How to Use
 
 As this is a self-contained webpage with no build process, you can use the project locally by simply opening the `index.html` file in any modern web browser. For online deployment, a static hosting service like GitHub Pages, Netlify, or Vercel can be used.
+
+## Learning: Hybrid API & E2E Testing
+
+This repository is designed as a learning resource for **Hybrid Testing**—combining API verifications (Source of Truth) with E2E UI testing.
+
+A comprehensive tutorial and a sample Robot Framework test suite are included to help you get started.
+
+👉 **[Read the Learning Tutorial](TUTORIAL.md)**
 
 ## Build-Me Tutorial
 
