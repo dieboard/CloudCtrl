@@ -7,6 +7,7 @@
     "agents": "cd cloudctrl-agents && npm run dev",
     "report": "node --env-file=.env agent-lab/pipeline.mjs",
     "report:all": "node --env-file=.env agent-lab/pipeline.mjs --browser",
-    "report:browser": "node --env-file=.env agent-lab/pipeline.mjs --browser --skip-review"
+    "report:browser": "node --env-file=.env agent-lab/pipeline.mjs --browser --skip-review",
+    "compare": "node --env-file=.env agent-lab/compare-reviews.mjs"
   }
 }
