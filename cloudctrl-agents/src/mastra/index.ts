@@ -25,9 +25,7 @@ export const mastra = new Mastra({
   }),
   logger: new PinoLogger({
     name: 'Mastra',
-    // 'debug' toont per stap wat de agent doet (tool-selectie, calls, resultaten) in je terminal.
-    // Zet terug op 'info' zodra je het niet meer nodig hebt — 'debug' is luidruchtig.
-    level: 'debug',
+    level: 'info',
   }),
   observability: new Observability({
     configs: {

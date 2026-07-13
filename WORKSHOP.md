@@ -511,16 +511,20 @@ hoort te zijn).
 - Leg het **uitvoerformaat** vast (hier: alleen Gherkin).
 - Bij een **klein/lokaal model**: houd instructies kort en concreet i.p.v. abstract.
 
-### Zien wat de agent doet — debug-logging aan/uit
+### Optioneel: laat een tweede model de cases nakijken (cross-check)
 
-Wil je in je **terminal** live meekijken per stap (tool-selectie, calls, resultaten)? Zet de logger
-op `debug` in [`src/mastra/index.ts`](cloudctrl-agents/src/mastra/index.ts):
-```ts
-logger: new PinoLogger({ name: 'Mastra', level: 'debug' }),  // 'info' = rustig, 'debug' = alles
+Een krachtige — maar **optionele** — extra: laat een **ander model** (andere familie = andere blinde
+vlekken) je gegenereerde cases beoordelen op logische fouten en dubbelingen. Dit heet
+*LLM-as-a-judge*. Je draait het **als je resultaten binnen zijn** — een verificatiestap, geen
+verplichte stap:
+```bash
+# 1. plak je Studio-output in agent-lab/testcases.txt
+# 2. laat een ANDER model (default llama3) ze nakijken:
+node agent-lab/review-testcases.mjs
 ```
-De **eerste keer** dat je 'm aanzet is dit heel leerzaam: je ziet letterlijk hoe de agent redeneert,
-welke tool hij kiest en wat er terugkomt. Voor dagelijks gebruik zet je 'm daarna weer op `info`
-(debug is luidruchtig). In Studio geeft het **Traces**-tabblad dezelfde informatie visueel.
+`llama3` is een andere familie dan qwen, dus het vangt eerder fouten die qwen zelf mist (zoals een
+omgedraaide 0/0-case). Let op: de reviewer is **óók feilbaar** — het is een versterker, jij blijft de
+kwaliteitspoort. (Zien wat de agent stap voor stap doet? Gebruik het **Traces**-tabblad in Studio.)
 
 ✅ **Klaar als:** je een set Gherkin-cases hebt die de belangrijkste grenzen dekt. Bewaar ze
 (`sources/testcases.feature`) — die heb je nodig in Stap 6 en 10.

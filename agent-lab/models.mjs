@@ -24,14 +24,15 @@ export function getModel() {
 }
 
 // Simpele OpenAI-compatibele chat-aanroep (werkt voor Ollama én OpenAI).
-export async function chat(messages, { temperature = 0.2, maxTokens = 1500 } = {}) {
-  const { baseURL, apiKey, model, provider } = getModel();
-  const res = await fetch(`${baseURL}/chat/completions`, {
+export async function chat(messages, { temperature = 0.2, maxTokens = 1500, model } = {}) {
+  const cfg = getModel();
+  const useModel = model || cfg.model; // optionele override, bv. om een ander model te laten reviewen
+  const res = await fetch(`${cfg.baseURL}/chat/completions`, {
     method: "POST",
-    headers: { "Content-Type": "application/json", Authorization: `Bearer ${apiKey}` },
-    body: JSON.stringify({ model, messages, temperature, max_tokens: maxTokens }),
+    headers: { "Content-Type": "application/json", Authorization: `Bearer ${cfg.apiKey}` },
+    body: JSON.stringify({ model: useModel, messages, temperature, max_tokens: maxTokens }),
   });
-  if (!res.ok) throw new Error(`${provider} gaf HTTP ${res.status}: ${await res.text()}`);
+  if (!res.ok) throw new Error(`${cfg.provider} (${useModel}) gaf HTTP ${res.status}: ${await res.text()}`);
   const data = await res.json();
   return data.choices?.[0]?.message?.content ?? "";
 }
