@@ -28,6 +28,7 @@
 - [Appendix C — De portable testtabel](#appendix-c--de-portable-testtabel)
 - [Appendix D — Troubleshooting](#appendix-d--troubleshooting)
 - [Appendix E — Woordenlijst](#appendix-e--woordenlijst)
+- [Appendix F — Lokaal draaien met qwen3-coder (Ollama) + de switch](#appendix-f--lokaal-draaien-met-qwen3-coder30b-ollama--de-switch)
 
 ---
 
@@ -230,10 +231,11 @@ npm run dev        # of: npx mastra dev
 De console toont een lokale URL (vaak `http://localhost:4111`). Open die — hier chat je straks
 met je agents en zie je elke tool-aanroep.
 
-> 💡 **Model-keuze.** De workshop leunt op een cloud-model (via Vercel/OpenAI). Wil je later
-> lokaal en gratis experimenteren, dan ondersteunt Mastra ook een **Ollama-provider** — dan draai
-> je (delen van) de agent op bijv. `qwen3-coder:30b`. Doe dit ná de workshop; tijdens de sessie
-> hou je het bij de provider die de workshop voorschrijft.
+> 💡 **Model-keuze.** De workshop leunt op een cloud-model (via Vercel/OpenAI). Je kunt (delen van)
+> de agent óók lokaal en gratis draaien op **`qwen3-coder:30b`** via Ollama — in dit project al als
+> POC uitgevoerd. Zie **[Appendix F](#appendix-f--lokaal-draaien-met-qwen3-coder30b-ollama--de-switch)**
+> voor de setup én de provider-switch waarmee je met één env-variabele wisselt (handig als Tim
+> tijdens de sessie een ander model voorschrijft).
 
 ✅ **Klaar als:** de Playground opent en je een "hello"-agent een antwoord kunt laten geven.
 
@@ -744,6 +746,105 @@ Plus de grens- en foutgevallen:
 - **Agent skill** — herbruikbare instructie-set die je AI-coding-tool tijdens development toepast.
 - **Invariant** — eigenschap die altijd waar is, ongeacht de data (bruikbaar als assertie).
 - **Gherkin** — Given/When/Then-notatie voor platform-neutrale testcases.
+- **Ollama** — tool om LLM's lokaal op je eigen machine te draaien, met een OpenAI-compatibel endpoint.
+- **Provider-switch** — één env-variabele (`MODEL_PROVIDER`) die bepaalt welk model de agent gebruikt.
+
+---
+
+## Appendix F — Lokaal draaien met qwen3-coder:30b (Ollama) + de switch
+
+> **Dit is een al uitgevoerde POC.** De testplan-agent (`agent-lab/`) draaide lokaal op
+> `qwen3-coder:30b` en genereerde geldige Gherkin-testcases uit `sources/pr-42.json` +
+> `sources/scrum-card.json` — **zonder enige cloud-key**. Meetpunt: ~3 min bij koude start
+> (18 GB model inladen), daarna merkbaar sneller omdat het model warm blijft.
+
+> ⚠️ **Hardware-waarschuwing — dit is een zwaar model.** `qwen3-coder:30b` is ~18 GB op schijf,
+> maar vraagt tijdens gebruik véél werkgeheugen: op de test-laptop liep dit op tot **~80 GB**.
+> Die machine heeft **128 GB RAM**, wat uitzonderlijk veel is. Op een doorsnee laptop (8–16 GB)
+> draait dit model **niet** — je loopt vast of het valt terug op tergend trage swap. Twee uitwegen,
+> allebei zonder code te wijzigen dankzij de switch:
+> - **Kleiner lokaal model:** `OLLAMA_MODEL=qwen2.5-coder:latest node agent-lab/generate-testcases.mjs`
+>   (~4,7 GB — draait op een normale laptop).
+> - **Naar de cloud:** `MODEL_PROVIDER=openai node --env-file=.env agent-lab/generate-testcases.mjs`.
+>
+> De 3 minuten laadtijd zelf is geen probleem; het **geheugen** is de echte bottleneck om vooraf te checken.
+
+### Waarom lokaal?
+- **Gratis & privé** — geen API-kosten, je data blijft op je machine.
+- **Blijvende waarde** — dezelfde opstelling werkt straks ook voor je Kotlin-project.
+- **Begrip** — je ziet precies wat er onder de motorkap gebeurt in plaats van een black-box-cloud.
+
+### F.1 Ollama opzetten (van nul)
+> Draait Ollama al met het model? Sla door naar F.2.
+
+1. Installeer Ollama: <https://ollama.com/download> (Windows/Mac/Linux).
+2. Haal het model op (~18 GB, dus even geduld):
+   ```bash
+   ollama pull qwen3-coder:30b
+   ```
+3. Controleer:
+   ```bash
+   ollama list                              # qwen3-coder:30b moet in de lijst staan
+   curl http://localhost:11434/api/tags     # API bereikbaar? -> HTTP 200
+   ```
+
+Ollama draait als achtergronddienst en biedt een **OpenAI-compatibel** endpoint op
+`http://localhost:11434/v1`. Daardoor werkt exact dezelfde aanroepcode als voor OpenAI — dát maakt
+de switch zo simpel.
+
+### F.2 Hoe de switch werkt
+De kern zit in [`agent-lab/models.mjs`](agent-lab/models.mjs). Eén env-variabele bepaalt alles:
+
+| `MODEL_PROVIDER` | baseURL | key | model |
+|---|---|---|---|
+| `ollama` *(default)* | `http://localhost:11434/v1` | dummy | `qwen3-coder:30b` |
+| `openai` | `https://api.openai.com/v1` | `OPENAI_API_KEY` | `gpt-4o` |
+
+Omdat beide providers OpenAI-compatibel zijn, is er **één** aanroepfunctie (`chat()`). De switch
+kiest alleen de juiste baseURL/key/model:
+
+```
+MODEL_PROVIDER ─▶ getModel() ─▶ { baseURL, apiKey, model } ─▶ chat() ─▶ POST /chat/completions
+```
+
+Je kunt ook zonder code te wijzigen een ander model kiezen via `OLLAMA_MODEL` of `OPENAI_MODEL`.
+
+### F.3 Draaien
+```bash
+# Lokaal op qwen (default)
+node agent-lab/generate-testcases.mjs
+
+# Op OpenAI (key uit .env), bv. als Tim dat voorschrijft
+MODEL_PROVIDER=openai node --env-file=.env agent-lab/generate-testcases.mjs
+
+# Ander lokaal model, geen code-wijziging
+OLLAMA_MODEL=qwen2.5-coder:latest node agent-lab/generate-testcases.mjs
+```
+
+### F.4 Hetzelfde patroon in Mastra
+In de echte Mastra-agent ([Stap 5](#stap-5--testplan-agent-bouwen--testcases-beoordelen)) doe je
+exact hetzelfde, alleen met de AI-SDK-providers in plaats van ruwe `fetch`:
+
+```ts
+import { createOpenAI } from "@ai-sdk/openai";
+
+const model =
+  process.env.MODEL_PROVIDER === "openai"
+    ? createOpenAI({ apiKey: process.env.OPENAI_API_KEY })("gpt-4o")
+    : createOpenAI({ baseURL: "http://localhost:11434/v1", apiKey: "ollama" })("qwen3-coder:30b");
+
+export const testplanAgent = new Agent({ name: "testplan-agent", instructions: `...`, model, tools });
+```
+
+Zo oefen je nu — framework-loos in `agent-lab/` — met precies de switch die je morgen 1-op-1 in
+Mastra hergebruikt.
+
+### F.5 Observaties uit de POC (nuttig voor je vragen aan Tim)
+- **Snelheid:** qwen3-coder:30b is bruikbaar maar traag bij koude start. Vraag Tim gerust naar
+  strategieën om lokale modellen warm/snel te houden, of wanneer cloud de betere keuze is.
+- **Kwaliteit:** qwen dekte de grenswaarden en de 2×2-combinaties, maar was minder compleet dan
+  een groot cloud-model (miste "geen data" en de monotonie-invariant). Goede vraag voor Tim: hoe
+  stuur je een kleiner lokaal model naar volledigere output (prompting, few-shot, groter model)?
 
 ---
 
