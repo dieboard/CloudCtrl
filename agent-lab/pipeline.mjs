@@ -11,6 +11,8 @@
 //   npm run report:all        -> Fase 1 + 2 + 3        (incl. Browser Use, credits)
 //   npm run report:browser    -> Fase 1 + 3            (genereren + Browser Use, review overslaan)
 import { readFile, writeFile, mkdir, appendFile } from "node:fs/promises";
+import { resolve } from "node:path";
+import { pathToFileURL } from "node:url";
 import { chatStream } from "./models.mjs";
 
 const args = process.argv.slice(2);
@@ -154,3 +156,21 @@ if (doBrowser) {
 await writeFile(reportPath, report);
 await log(`Klaar. Rapport: ${reportPath}`);
 console.log("\n" + report);
+
+// Klikbare links (openen doe je zelf; auto-open alleen met --open).
+const reportUrl = pathToFileURL(resolve(reportPath)).href;
+const logUrl = pathToFileURL(resolve(logPath)).href;
+console.log(`\n📄 Rapport:   ${reportUrl}`);
+console.log(`📝 Proceslog: ${logUrl}`);
+if (args.includes("--open")) {
+  const { exec } = await import("node:child_process");
+  const abs = resolve(reportPath);
+  const cmd =
+    process.platform === "win32" ? `start "" "${abs}"`
+    : process.platform === "darwin" ? `open "${abs}"`
+    : `xdg-open "${abs}"`;
+  exec(cmd);
+  console.log("→ rapport wordt geopend (--open).");
+} else {
+  console.log("(tip: voeg --open toe om het rapport automatisch te openen)");
+}
