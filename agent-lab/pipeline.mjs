@@ -76,12 +76,17 @@ const genSystem = `Je bent een ervaren QA-engineer. Genereer testcases als Gherk
 Dek af: grenswaarden (drempel 0 en maximum), de 2x2-combinaties (hoeveelheid ja/nee x kans ja/nee),
 een geval 'geen data', en VERPLICHT een case waarin een datapunt EXACT gelijk is aan de drempel
 (om te testen of samenvatting en grafiek hetzelfde tonen). Assert invarianten, geen exacte aantallen.
-Vermijd bijna-identieke cases. Geef ALLEEN genummerde Gherkin-scenario's terug.`;
+Vermijd bijna-identieke cases: genereer MAXIMAAL 12 cases die elk iets UNIEKS testen. Zorg dat de
+verwachte uitkomst logisch klopt (bij drempels 0/0 hoort ALLE neerslag getoond te worden). Geef
+ALLEEN genummerde Gherkin-scenario's terug.`;
 const genUser = `PULL REQUEST:\n${JSON.stringify(pr, null, 2)}\n\nSCRUMKAART:\n${JSON.stringify(card, null, 2)}`;
-const generated = await chat([
-  { role: "system", content: genSystem },
-  { role: "user", content: genUser },
-]);
+const generated = await chat(
+  [
+    { role: "system", content: genSystem },
+    { role: "user", content: genUser },
+  ],
+  { maxTokens: 2500 }
+);
 const cases = parseCases(generated);
 await log(`Fase 1 klaar: ${cases.length} cases gegenereerd.`);
 
