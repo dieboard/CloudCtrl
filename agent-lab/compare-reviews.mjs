@@ -8,9 +8,12 @@ import { resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 import { runReviews, judge, label } from "./review-lib.mjs";
 
-const REVIEWERS = (process.env.REVIEWERS || "mistral:latest,llama3:latest").split(",").map((s) => s.trim());
-const JUDGE_MODEL = process.env.JUDGE_MODEL || "qwen3-coder:30b";
-const file = process.argv[2] || "agent-lab/testcases.txt";
+// Config kan via flags (werkt overal, ook Windows cmd) of via env-vars.
+const argv = process.argv.slice(2);
+const flag = (name) => argv.find((a) => a.startsWith(`--${name}=`))?.split("=").slice(1).join("=");
+const REVIEWERS = (flag("reviewers") || process.env.REVIEWERS || "mistral:latest,llama3:latest").split(",").map((s) => s.trim());
+const JUDGE_MODEL = flag("judge") || process.env.JUDGE_MODEL || "qwen3-coder:30b";
+const file = argv.find((a) => !a.startsWith("--")) || "agent-lab/testcases.txt";
 const cases = await readFile(file, "utf8");
 
 const stamp = new Date().toISOString().replace(/[:.]/g, "-").slice(0, 19);

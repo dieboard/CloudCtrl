@@ -10,6 +10,7 @@
     "report:browser": "node --env-file=.env agent-lab/pipeline.mjs --browser --skip-review",
     "review": "node --env-file=.env agent-lab/review-testcases.mjs",
     "compare": "node --env-file=.env agent-lab/compare-reviews.mjs",
+    "compare:3": "node --env-file=.env agent-lab/compare-reviews.mjs --reviewers=mistral:latest,llama3:latest,qwen2.5-coder:latest",
     "browser": "node --env-file=.env agent-lab/browser-run.mjs",
     "studio-run": "node --env-file=.env agent-lab/studio-run.mjs"
   }

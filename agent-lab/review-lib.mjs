@@ -7,23 +7,25 @@ bij BEIDE. Meld PER casenummer: logische fouten (bij drempels 0/0 hoort ALLE nee
 worden), tegenstrijdigheden en (bijna-)duplicaten. Wees beknopt en concreet.`;
 
 export const judgeSystem = `Je bent een neutrale, strenge meta-reviewer. Meerdere QA-reviewers
-beoordeelden DEZELFDE Gherkin-testcases voor een neerslagfilter met twee drempels (hoeveelheid mm/u
-EN kans %; een datapunt telt alleen als regen bij BEIDE).
+beoordeelden dezelfde Gherkin-testcases voor een neerslagfilter met twee drempels (hoeveelheid mm/u
+en kans %; een datapunt telt alleen als regen bij beide).
 
-WERKWIJZE:
-1. Bepaal ZELF eerst de echte problemen. Onderscheid KRITIEK (logische fouten in de verwachte
-   uitkomst — bv. bij drempels 0/0 hoort ALLE neerslag getoond te worden — en ontbrekende kritieke
-   dekking) van KLEIN (duplicaten, formulering).
-2. Beoordeel per reviewer: geldige bevindingen vs. valse positieven, en welke KRITIEKE problemen hij
+Werkwijze:
+1. Bepaal zelf eerst de echte problemen. Onderscheid kritieke problemen (logische fouten in de
+   verwachte uitkomst — bv. bij drempels 0/0 hoort alle neerslag getoond te worden — en ontbrekende
+   kritieke dekking) van kleine punten (duplicaten, formulering).
+2. Beoordeel per reviewer: geldige bevindingen vs. valse positieven, en welke kritieke problemen hij
    ving of miste.
 
-SCOREREGELS (GEEN optelsom, GEEN ruisfilter):
-- Een KRITIEK probleem vangen weegt zwaar; missen weegt zwaar negatief.
-- Wie een kritiek probleem MIST dat een ander WEL vond, kan NIET winnen — ook niet met meer
+Scoreregels (geen optelsom, geen ruisfilter):
+- Een kritiek probleem vangen weegt zwaar; het missen ervan weegt zwaar negatief.
+- Wie een kritiek probleem mist dat een ander wél vond, kan niet winnen — ook niet met meer
   duplicaat-meldingen.
-- Duplicaten/kleine punten zijn slechts tiebreakers. Valse positieven verlagen de score.
+- Duplicaten en kleine punten zijn slechts tiebreakers. Valse positieven verlagen de score.
 
-Geef EXACT dit formaat, per reviewer een blok, daarna het eindoordeel:
+Schrijfstijl: schrijf in gewone zinnen; gebruik geen woorden in HOOFDLETTERS voor nadruk.
+
+Geef exact dit formaat, per reviewer een blok, daarna het eindoordeel:
 
 ## Reviewer <letter> (<model>)
 - Raak: X van Y bevindingen (Z%)
@@ -32,7 +34,9 @@ Geef EXACT dit formaat, per reviewer een blok, daarna het eindoordeel:
 - Valse positieven: <aantal + kort>
 
 ## Eindoordeel
-Winnaar: <letter> — reden op basis van KRITIEKE dekking (niet aantal).`;
+Winnaar: <letter>. Leg in een paar gewone zinnen uit waarom, met verwijzing naar de concrete
+kritieke punten die elke reviewer ving of miste — zodat het oordeel logisch volgt uit de blokken
+hierboven (dus niet losstaand "op basis van kritieke dekking").`;
 
 export const label = (i) => String.fromCharCode(65 + i); // A, B, C...
 
