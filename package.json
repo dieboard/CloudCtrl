@@ -4,6 +4,8 @@
   "description": "Root-scripts voor de agent-workshop. De web-app zelf is index.html (geen build).",
   "scripts": {
     "dev": "cd cloudctrl-agents && npm run dev",
-    "agents": "cd cloudctrl-agents && npm run dev"
+    "agents": "cd cloudctrl-agents && npm run dev",
+    "report": "node --env-file=.env agent-lab/pipeline.mjs",
+    "report:all": "node --env-file=.env agent-lab/pipeline.mjs --browser"
   }
 }

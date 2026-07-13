@@ -9,6 +9,9 @@ node_modules/
 dist/
 .vercel/
 
+# Run-artefacten (gegenereerde rapporten/logs)
+agent-lab/reports/
+
 # OS / editor
 .DS_Store
 Thumbs.db

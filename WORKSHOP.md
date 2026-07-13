@@ -164,6 +164,26 @@ de rol, de grenzen en het gewenste uitvoerformaat beschrijft, hoe betrouwbaarder
 Prompten is een vaardigheid — behandel de agent-instructies als productie-artefact, niet als
 wegwerptekst.
 
+### 2.7 Kosten-bewust ontwerp: goedkoop eerst, duur alleen bewust
+Een agentische pijplijn mengt **gratis** stappen (lokale modellen) met **betaalde** (cloud-diensten
+zoals Browser Use). Ontwerp 'm zo dat je **vrij kunt experimenteren zonder credits te verbranden**:
+
+- Zet de goedkope, snelle stappen **vooraan** (genereren + reviewen op lokale modellen = gratis).
+  Daar itereer je zoveel je wilt.
+- Zet de dure stap (Browser Use = credits) **achteraan, achter een menselijke go/no-go**. Je "betaalt"
+  pas als het gratis signaal (het rapport) zegt dat het de moeite waard is.
+- Vuistregel: **fail cheap, verify expensive** — verbrand geen credits om iets te ontdekken dat een
+  gratis stap ook had gevonden.
+
+Dit is precies waarom de pijplijn (Stap 7) twee modi heeft: `npm run report` (gratis, t/m rapport)
+en `npm run report:all` (1-click, inclusief Browser Use).
+
+> ⚠️ **Dit is géén shift-left.** Shift-left = testen *tijdens de ontwikkeling* (bijvoorbeeld de
+> agent-skill die je diff nakijkt terwijl je codeert — zie Stap 9). Deze pijplijn verifieert juist
+> een feature die al klaar is. Het kosten-funnel-principe gaat over de *volgorde en kosten* van een
+> verificatie-pijplijn, niet over *wanneer* in het ontwikkelproces je test. Twee verschillende
+> assen — beide nuttig, maar niet hetzelfde.
+
 ---
 
 ## 3. Voorbereiding & checklist
