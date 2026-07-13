@@ -1,28 +1,21 @@
-// CloudCtrl testpijplijn met los te kiezen fasen.
+// CloudCtrl testpijplijn.
 //
-//   Fase 1 (--gen)      genereer testcases      (lokaal qwen)   gratis
-//   Fase 2 (--review)   review door 2e model    (llama3)        gratis   -> vereist Fase 1 (cases)
-//   Fase 4 (--browser)  voer uit op Browser Use (cloud)         credits  -> vereist Fase 1 (cases)
-//   Fase 3 (rapport)    wordt ALTIJD gemaakt/getoond als er cases zijn.
+//   Fase 1  genereer testcases      (lokaal qwen)   gratis   - draait ALTIJD
+//   Fase 2  review door 2e model    (llama3)        gratis   - standaard aan (uit met --skip-review)
+//   Fase 3  voer uit op Browser Use (cloud)         credits  - alleen met --browser
+//   Rapport wordt ALTIJD gemaakt en getoond (dat is de output, geen keuze-fase).
 //
-// Geen vlaggen = --gen --review (de gratis go/no-go). Met vlaggen draai je exact die fasen.
-// Cases worden bewaard in agent-lab/reports/state/cases.txt, zodat je Fase 2 of 4 later los kunt
-// draaien op een eerder gegenereerde set.
+// De fasen bouwen live op (streaming). Draai dit bij voorkeur in je eigen terminal voor het live-effect.
 //
-// Voorbeelden:
-//   node --env-file=.env agent-lab/pipeline.mjs                    # 1+2 (+rapport)
-//   node --env-file=.env agent-lab/pipeline.mjs --gen --review --browser   # 1+2+4 (+rapport)
-//   node --env-file=.env agent-lab/pipeline.mjs --gen --browser    # 1+4 (+rapport)  -> "1 en 4"
-//   node --env-file=.env agent-lab/pipeline.mjs --review           # 2 op eerdere cases
+//   npm run report            -> Fase 1 + 2            (gratis go/no-go)
+//   npm run report:all        -> Fase 1 + 2 + 3        (incl. Browser Use, credits)
+//   npm run report:browser    -> Fase 1 + 3            (genereren + Browser Use, review overslaan)
 import { readFile, writeFile, mkdir, appendFile } from "node:fs/promises";
-import { chat, chatStream } from "./models.mjs";
+import { chatStream } from "./models.mjs";
 
-// ---- fasekeuze ----
 const args = process.argv.slice(2);
-let doGen = args.includes("--gen");
-let doReview = args.includes("--review");
-let doBrowser = args.includes("--browser");
-if (!doGen && !doReview && !doBrowser) { doGen = true; doReview = true; } // default: gratis go/no-go
+const doBrowser = args.includes("--browser");
+const doReview = !args.includes("--skip-review");
 
 const BROWSER_LIMIT = Number(process.env.BROWSER_LIMIT || 3);
 const REVIEW_MODEL = process.env.REVIEW_MODEL || "llama3:latest";
@@ -31,11 +24,9 @@ const BASE = "https://api.browser-use.com/api/v3";
 
 const stamp = new Date().toISOString().replace(/[:.]/g, "-").slice(0, 19);
 const REPORT_DIR = "agent-lab/reports";
-const STATE_DIR = `${REPORT_DIR}/state`;
-const CASES_FILE = `${STATE_DIR}/cases.txt`;
 const reportPath = `${REPORT_DIR}/report-${stamp}.md`;
 const logPath = `${REPORT_DIR}/log-${stamp}.txt`;
-await mkdir(STATE_DIR, { recursive: true });
+await mkdir(REPORT_DIR, { recursive: true });
 
 async function log(line) {
   const l = `[${new Date().toISOString()}] ${line}`;
@@ -73,39 +64,28 @@ async function runBrowserTask(task) {
   return { status: "timeout", output: "" };
 }
 
-await log(`Start. Fasen: ${[doGen && "gen", doReview && "review", doBrowser && "browser"].filter(Boolean).join(", ")} (+rapport).`);
+const phases = ["Fase 1 genereren", doReview && "Fase 2 review", doBrowser && "Fase 3 browser"].filter(Boolean);
+await log(`Start. ${phases.join(" · ")} (+rapport).`);
 
-// ---- Fase 1: genereren (of eerdere cases laden) ----
-let generated = "";
-if (doGen) {
-  banner("FASE 1 · genereren (live)");
-  await log("Fase 1: testcases genereren (lokaal model).");
-  const pr = JSON.parse(await readFile("sources/pr-42.json", "utf8"));
-  const card = JSON.parse(await readFile("sources/scrum-card.json", "utf8"));
-  const genSystem = `Je bent een ervaren QA-engineer. Genereer testcases als Gherkin (Given/When/Then).
+const pr = JSON.parse(await readFile("sources/pr-42.json", "utf8"));
+const card = JSON.parse(await readFile("sources/scrum-card.json", "utf8"));
+
+// ---- Fase 1: genereren (altijd, live) ----
+banner("FASE 1 · genereren (live)");
+await log("Fase 1: testcases genereren (lokaal model).");
+const genSystem = `Je bent een ervaren QA-engineer. Genereer testcases als Gherkin (Given/When/Then).
 Dek af: grenswaarden (drempel 0 en maximum), de 2x2-combinaties (hoeveelheid ja/nee x kans ja/nee),
 een geval 'geen data', en VERPLICHT een case waarin een datapunt EXACT gelijk is aan de drempel.
 Assert invarianten, geen exacte aantallen. Genereer MAXIMAAL 12 UNIEKE cases; zorg dat de verwachte
 uitkomst logisch klopt (bij drempels 0/0 hoort ALLE neerslag getoond te worden). Geef ALLEEN
 genummerde Gherkin-scenario's terug.`;
-  const genUser = `PULL REQUEST:\n${JSON.stringify(pr, null, 2)}\n\nSCRUMKAART:\n${JSON.stringify(card, null, 2)}`;
-  generated = await chatStream([{ role: "system", content: genSystem }, { role: "user", content: genUser }], { maxTokens: 2500 });
-  console.log("");
-  await writeFile(CASES_FILE, generated);
-  await appendFile(logPath, "\n[cases]\n" + generated + "\n");
-} else if (doReview || doBrowser) {
-  try {
-    generated = await readFile(CASES_FILE, "utf8");
-    await log(`Eerdere cases geladen uit ${CASES_FILE}.`);
-  } catch {
-    console.error(`\n[STOP] Fase 2/4 vereist Fase 1: er zijn geen cases. Draai eerst met --gen.`);
-    process.exit(1);
-  }
-}
-const pr = JSON.parse(await readFile("sources/pr-42.json", "utf8"));
+const genUser = `PULL REQUEST:\n${JSON.stringify(pr, null, 2)}\n\nSCRUMKAART:\n${JSON.stringify(card, null, 2)}`;
+const generated = await chatStream([{ role: "system", content: genSystem }, { role: "user", content: genUser }], { maxTokens: 2500 });
+console.log("");
 const cases = parseCases(generated);
+await log(`Fase 1 klaar: ${cases.length} cases.`);
 
-// ---- Fase 2: review (streaming) ----
+// ---- Fase 2: review (optioneel, live) ----
 let review = null;
 if (doReview) {
   banner(`FASE 2 · review door ${REVIEW_MODEL} (live)`);
@@ -118,11 +98,11 @@ tegenstrijdigheden en (bijna-)duplicaten. Wees beknopt en concreet.`;
   console.log("");
 }
 
-// ---- Fase 4: Browser Use ----
+// ---- Fase 3: Browser Use (optioneel) ----
 let browserResults = [];
 if (doBrowser) {
-  banner(`FASE 4 · Browser Use — eerste ${BROWSER_LIMIT} cases (kost credits)`);
-  await log(`Fase 4: Browser Use-uitvoering van de eerste ${BROWSER_LIMIT} cases.`);
+  banner(`FASE 3 · Browser Use — eerste ${BROWSER_LIMIT} cases (kost credits)`);
+  await log(`Fase 3: Browser Use-uitvoering van de eerste ${BROWSER_LIMIT} cases.`);
   for (const [i, caseText] of cases.slice(0, BROWSER_LIMIT).entries()) {
     await log(`  case ${i + 1} naar Browser Use...`);
     const task = `Test het volgende scenario op ${TARGET}.
@@ -143,23 +123,19 @@ Rapporteer beknopt: GESLAAGD / GEFAALD / NIET-UITVOERBAAR + wat je zag.`;
   }
 }
 
-// ---- Fase 3: rapport (altijd, als er cases zijn) ----
-if (cases.length === 0) {
-  console.error("\n[STOP] Geen cases -> geen rapport mogelijk.");
-  process.exit(1);
-}
+// ---- Rapport (altijd) ----
 banner("RAPPORT");
 let report = `# CloudCtrl Testrapport — ${stamp}
 
 > **Go/no-go voor de tester.** Beoordeel dit rapport en beslis of de cases naar Browser Use mogen.
-> Bron: PR #${pr.number} + scrumkaart. Doelwit: ${TARGET}
-> Gedraaide fasen: ${[doGen && "genereren", doReview && "review", doBrowser && "browser"].filter(Boolean).join(", ")}.
+> Bron: PR #${pr.number} + scrumkaart ${card.id}. Doelwit: ${TARGET}
+> Gedraaide fasen: ${phases.join(", ")}.
 
 ## 1. Overgebleven testcases (${cases.length})
 ${cases.join("\n")}
 
 ## 2. Cases die abnormaal lijken (ter beoordeling)
-${review ? `_Aangedragen door ${REVIEW_MODEL} — een versterker, geen orakel. Lees kritisch._\n\n${review.trim()}` : "_Fase 2 (review) niet uitgevoerd._"}
+${review ? `_Aangedragen door ${REVIEW_MODEL} — een versterker, geen orakel. Lees kritisch._\n\n${review.trim()}` : "_Review (Fase 2) overgeslagen (--skip-review)._"}
 
 ## 3. Overzicht van alle wijzigingen (software onder test)
 - **PR #${pr.number}:** ${pr.title}
@@ -172,7 +148,7 @@ if (doBrowser) {
     report += `\n### Case ${r.i}\n${r.caseText}\n\n**Status:** ${r.status} · **Geslaagd:** ${r.successful ?? "-"}\n\n**Waarneming:**\n${r.output || "(leeg)"}\n`;
   }
 } else {
-  report += `\n---\n\n_Browser Use niet uitgevoerd. Draai met \`--browser\` om (na go) de eerste ${BROWSER_LIMIT} cases echt te testen._\n`;
+  report += `\n---\n\n_Browser Use (Fase 3) niet uitgevoerd. Draai met \`--browser\` om (na go) de eerste ${BROWSER_LIMIT} cases echt te testen._\n`;
 }
 
 await writeFile(reportPath, report);
