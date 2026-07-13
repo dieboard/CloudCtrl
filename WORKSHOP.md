@@ -730,29 +730,26 @@ export const writeReport = createTool({
 **Doel:** een agent skill die tijdens development je diff controleert — de "shift-left"-variant.
 
 Een **agent skill** is een herbruikbare instructie-set die je AI-coding-tool (bv. Claude Code)
-oppakt. Voor CloudCtrl is de `>` vs `>=`-inconsistentie het perfecte doelwit.
+automatisch oppakt. Voor CloudCtrl is de `>` vs `>=`-inconsistentie het perfecte doelwit.
 
-Maak `.claude/skills/consistency-check/SKILL.md`:
+### Basiswerking van een agent-skill
+- Een skill is een map met een **`SKILL.md`** onder `.claude/skills/<naam>/`.
+- Bovenaan staat **frontmatter** met `name` en `description`. Die **`description` is de trigger**:
+  je AI-tool leest 'm en beslist zélf wanneer de skill relevant is (net als een tool-beschrijving —
+  zie [§2.2](#22-wat-is-een-tool)).
+- De **body** zijn instructies in natuurlijke taal: wat te controleren en wat te doen bij een
+  bevinding. Geen code — een herbruikbare regel.
+- Zo werkt **shift-left**: terwijl je in `index.html` codeert, kijkt de skill mee en meldt de bug
+  meteen — niet pas in een testrapport achteraf.
 
-```markdown
----
-name: cloudctrl-consistency-check
-description: Controleert of samenvatting en grafiek dezelfde drempel-vergelijking gebruiken.
----
+Deze skill staat in de repo:
+**[`.claude/skills/consistency-check/SKILL.md`](.claude/skills/consistency-check/SKILL.md)**.
+Kort: hij triggert op drempel-logica (`amountThreshold`/`probThreshold`), controleert of samenvatting
+(`>`) en grafiek (`>=`) dezelfde operator gebruiken, of het filter écht op **beide** drempels test
+(`&&`), en of de grenswaarden kloppen — en stelt bij een bevinding één operator + een grens-testcase voor.
 
-# CloudCtrl consistentie-check
-
-Wanneer de diff logica rond de dubbele-drempel raakt (`amountThreshold` of `probThreshold`):
-
-1. Zoek elke vergelijking met een drempel (`>`, `>=`, `<`, `<=`).
-2. Controleer of de **samenvatting** en de **grafiek** DEZELFDE operator gebruiken.
-   - Nu: samenvatting gebruikt `>` (index.html:323), grafiek gebruikt `>=` (index.html:409).
-   - Dat is inconsistent op de grenswaarde. Meld dit.
-3. Stel de fix voor: kies één operator en pas beide plekken aan.
-4. Herinner de ontwikkelaar aan een testcase op de grens (waarde == drempel).
-```
-
-Test hem: laat je AI-tool de skill draaien op `index.html` en kijk of hij de inconsistentie meldt.
+**Test hem:** open `index.html` met je AI-tool en vraag 'm de diff/het bestand te controleren; de
+skill moet de bekende `>`/`>=`-inconsistentie zelfstandig aanwijzen.
 
 > 🧠 **Leermoment:** dit is "agentic quality" — niet een agent die code schríjft, maar een agent
 > die *meekijkt* met een expliciete, herbruikbare regel. Deze skill neem je 1-op-1 mee naar je
