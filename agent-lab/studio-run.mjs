@@ -13,7 +13,8 @@ import { pathToFileURL } from "node:url";
 import { runReviews, judge, label } from "./review-lib.mjs";
 
 const STUDIO = process.env.STUDIO_URL || "http://localhost:4111";
-const PROMPT = process.env.PROMPT || "Genereer testcases voor PR 42 en scrumkaart CC-17";
+// LET OP: gebruik NIET 'PROMPT' als env-naam — dat is een gereserveerde Windows-variabele ($P$G).
+const PROMPT = process.env.TESTPLAN_PROMPT || "Genereer testcases voor PR 42 en scrumkaart CC-17";
 const REVIEWERS = (process.env.REVIEWERS || "mistral:latest,llama3:latest").split(",").map((s) => s.trim());
 const JUDGE_MODEL = process.env.JUDGE_MODEL || "qwen3-coder:30b";
 
