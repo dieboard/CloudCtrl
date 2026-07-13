@@ -13,6 +13,11 @@ import { toolCallAppropriatenessScorer, completenessScorer, translationScorer } 
 export const mastra = new Mastra({
   workflows: { weatherWorkflow },
   agents: { weatherAgent, testplanAgent, browserAgent },
+  server: {
+    // Lokaal qwen (30B) kan koud ~2 min laden en dan nog genereren. De default request-timeout
+    // is 180s (3 min) -> te kort, geeft 504. Ruim verhogen voor trage lokale runs.
+    timeout: 600000, // 10 min
+  },
   scorers: { toolCallAppropriatenessScorer, completenessScorer, translationScorer },
   storage: new MastraCompositeStore({
     id: 'composite-storage',
