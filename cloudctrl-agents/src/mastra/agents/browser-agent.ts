@@ -21,6 +21,9 @@ SELECTORS (noem deze in je browseropdracht zodat de browser-agent de juiste elem
 - Grafiek: #rainChart  (canvas)
 - Samenvatting (tekst): #forecastSummary
 
+LET OP: gebruik altijd de element-ID's, NIET de zichtbare labeltekst — de UI kan in het Engels of
+Nederlands staan (i18n), maar de ID's zijn in beide talen hetzelfde.
+
 WERKWIJZE:
 1. Vertaal de gegeven testcase naar EEN concrete browseropdracht.
 2. Laat de opdracht ALTIJD beginnen met: ga naar het DOELWIT, zoek een plaats (bv. Rotterdam) via
