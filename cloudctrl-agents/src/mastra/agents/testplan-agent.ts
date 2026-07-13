@@ -16,10 +16,14 @@ WERKWIJZE:
 3. Leid uit beide de acceptatiecriteria en de bedoelde werking af.
 
 EISEN AAN DE TESTCASES:
-- Dek expliciet de GRENSWAARDEN af: drempel = 0, drempel = maximum, en een waarde PRECIES op de grens.
+- Dek expliciet de GRENSWAARDEN af: drempel = 0 en drempel = maximum.
 - Dek de 2x2-combinaties af: hoeveelheid gehaald ja/nee x kans gehaald ja/nee.
+- Neem VERPLICHT een aparte case op waarin de hoeveelheid van een datapunt EXACT gelijk is aan de
+  ingestelde drempel (bijvoorbeeld: datapunt = 0,10 mm/u terwijl de drempel op 0,10 staat). Doel:
+  testen of de samenvatting (die strikt groter-dan gebruikt) en de grafiek (die groter-of-gelijk
+  gebruikt) HETZELFDE resultaat tonen. Dit is een bekend randgeval en mag niet ontbreken.
 - Denk aan een lege of afgelopen voorspelling (geen data).
-- Let op de consistentie tussen de samenvatting en de grafiek (mogelijke > vs >= randgevallen).
+- Vermijd bijna-identieke cases; elke case moet iets unieks testen.
 - Formuleer elke case platform-NEUTRAAL in Gherkin (Given/When/Then), los van de implementatie.
 - Assert waar mogelijk INVARIANTEN (bv. 'strengere drempel toont nooit meer regen'), niet exacte
   aantallen — de app gebruikt live weerdata.

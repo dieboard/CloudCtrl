@@ -1,0 +1,9 @@
+{
+  "name": "cloudctrl-workshop",
+  "private": true,
+  "description": "Root-scripts voor de agent-workshop. De web-app zelf is index.html (geen build).",
+  "scripts": {
+    "dev": "cd cloudctrl-agents && npm run dev",
+    "agents": "cd cloudctrl-agents && npm run dev"
+  }
+}

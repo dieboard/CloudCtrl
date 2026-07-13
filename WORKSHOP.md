@@ -480,6 +480,48 @@ Als je die vraag verstuurt, draait deze **agentic loop**:
 Mist er iets? Scherp dan je `instructions` aan en run opnieuw. **Dit itereren ís het leren** —
 je merkt direct hoe promptsturing het resultaat verandert.
 
+### Het bijschaaf-proces: van "bijna goed" naar "goed"
+
+Een agent lever je bijna nooit in één keer perfect af. De echte vaardigheid is de **feedbacklus**:
+
+1. **Observeren** — draai 'm en lees de output als domeinexpert. Wat mist of klopt niet?
+2. **Diagnosticeren** — is het een *promptgat* (onduidelijke/ontbrekende instructie) of een
+   *modelgrens* (te klein model, non-determinisme)?
+3. **Aanscherpen** — maak de instructie **expliciet en concreet**: geef een voorbeeld
+   ("datapunt = 0,10 mm/u bij drempel 0,10"), markeer het als **VERPLICHT**, en zeg *waaróm* (het
+   doel). Vage instructies → vage output.
+4. **Herverifiëren** — draai **een paar keer** (non-determinisme!). Is het gat gedicht én is er niets
+   nieuws stukgegaan?
+5. **Herhalen** — jij blijft de beoordelaar; de agent versnelt, maar vervangt je oordeel niet.
+
+**Precies dat gebeurde in deze workshop.** We voegden één zin toe ("neem een case op waar de waarde
+EXACT gelijk is aan de drempel"). Resultaat: de `>`/`>=`-randcase verscheen ✅. Máár in diezelfde run
+draaide het model een andere case om (drempels 0/0 → beweerde "geen regen", terwijl dat "álle regen"
+hoort te zijn).
+
+> 🧠 **De les:** een promptfix dicht één gat, maar een non-deterministisch model kan tegelijk een
+> *ander* foutje introduceren. Daarom herverifieer je en lees je élke run — **de mens is de
+> kwaliteitspoort, de agent de versneller.** Dit is precies waarom jouw QA-blik onmisbaar blijft.
+
+**Hoe zorg je dat het model je bedoeling snapt?**
+- Wees expliciet en ondubbelzinnig; laat geen ruimte voor interpretatie.
+- Geef een **concreet voorbeeld** van wat je wilt.
+- Zeg het **doel** ("om te testen of X en Y hetzelfde tonen"), niet alleen de handeling.
+- Gebruik sterke markeringen (VERPLICHT / mag niet ontbreken) voor must-haves.
+- Leg het **uitvoerformaat** vast (hier: alleen Gherkin).
+- Bij een **klein/lokaal model**: houd instructies kort en concreet i.p.v. abstract.
+
+### Zien wat de agent doet — debug-logging aan/uit
+
+Wil je in je **terminal** live meekijken per stap (tool-selectie, calls, resultaten)? Zet de logger
+op `debug` in [`src/mastra/index.ts`](cloudctrl-agents/src/mastra/index.ts):
+```ts
+logger: new PinoLogger({ name: 'Mastra', level: 'debug' }),  // 'info' = rustig, 'debug' = alles
+```
+De **eerste keer** dat je 'm aanzet is dit heel leerzaam: je ziet letterlijk hoe de agent redeneert,
+welke tool hij kiest en wat er terugkomt. Voor dagelijks gebruik zet je 'm daarna weer op `info`
+(debug is luidruchtig). In Studio geeft het **Traces**-tabblad dezelfde informatie visueel.
+
 ✅ **Klaar als:** je een set Gherkin-cases hebt die de belangrijkste grenzen dekt. Bewaar ze
 (`sources/testcases.feature`) — die heb je nodig in Stap 6 en 10.
 

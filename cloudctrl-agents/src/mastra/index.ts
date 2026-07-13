@@ -2,7 +2,6 @@
 import { Mastra } from '@mastra/core/mastra';
 import { PinoLogger } from '@mastra/loggers';
 import { LibSQLStore } from '@mastra/libsql';
-import { DuckDBStore } from "@mastra/duckdb";
 import { MastraCompositeStore } from '@mastra/core/storage';
 import { Observability, MastraStorageExporter, MastraPlatformExporter, SensitiveDataFilter } from '@mastra/observability';
 import { weatherWorkflow } from './workflows/weather-workflow';
@@ -20,13 +19,15 @@ export const mastra = new Mastra({
       id: "mastra-storage",
       url: "file:./mastra.db",
     }),
-    domains: {
-      observability: await new DuckDBStore().getStore('observability'),
-    }
+    // Observability gebruikt nu ook de LibSQL-default i.p.v. DuckDB.
+    // DuckDB staat maar één proces tegelijk toe op mastra.duckdb -> harde lock-crash
+    // bij elke hot-reload/dubbele start. SQLite/LibSQL laat meerdere processen toe.
   }),
   logger: new PinoLogger({
     name: 'Mastra',
-    level: 'info',
+    // 'debug' toont per stap wat de agent doet (tool-selectie, calls, resultaten) in je terminal.
+    // Zet terug op 'info' zodra je het niet meer nodig hebt — 'debug' is luidruchtig.
+    level: 'debug',
   }),
   observability: new Observability({
     configs: {
