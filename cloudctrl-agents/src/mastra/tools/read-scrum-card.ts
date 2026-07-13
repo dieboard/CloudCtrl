@@ -1,7 +1,6 @@
 import { createTool } from '@mastra/core/tools';
 import { z } from 'zod';
-import { readFile } from 'node:fs/promises';
-import { join } from 'node:path';
+import { loadSource } from './sources';
 
 // Leest een scrumbord-kaart uit sources/scrum-card.json.
 export const readScrumCard = createTool({
@@ -16,7 +15,6 @@ export const readScrumCard = createTool({
     acceptanceCriteria: z.array(z.string()),
   }),
   execute: async () => {
-    const path = join(process.cwd(), 'sources', 'scrum-card.json');
-    return JSON.parse(await readFile(path, 'utf8'));
+    return await loadSource('scrum-card.json');
   },
 });
