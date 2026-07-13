@@ -1,0 +1,7 @@
+{
+  "number": 42,
+  "title": "Dubbele-drempel filtering voor neerslag",
+  "body": "Gebruiker kan een minimale hoeveelheid (mm/u) EN een minimale kans (%) instellen via twee sliders. Alleen neerslag die aan BEIDE voorwaarden voldoet wordt als regen getoond in de grafiek en samenvatting. In Filter Modus wordt de rest weggefilterd; in Overlay Modus zie je potentieel vs. verwacht.",
+  "changedFiles": ["index.html"],
+  "notes": "Let op: de samenvatting gebruikt strikt groter-dan (>) en de grafiek groter-of-gelijk (>=). Dit kan op de grenswaarde inconsistent zijn."
+}

@@ -9,6 +9,7 @@
 ## Inhoud
 
 - [0. Intro — wat & waarom](#0-intro--wat--waarom)
+- [0.1 Wat draait waar — lokaal vs. cloud](#01-wat-draait-waar--lokaal-vs-cloud)
 - [1. Waar we mee eindigen](#1-waar-we-mee-eindigen)
 - [2. Leermomenten (agents = nieuw terrein)](#2-leermomenten-agents--nieuw-terrein)
 - [3. Voorbereiding & checklist](#3-voorbereiding--checklist)
@@ -62,6 +63,42 @@ die je vandaag genereert zijn bovendien platform-neutraal en neem je zó mee naa
 (zie [Stap 10](#stap-10--portable-testspec-exporteren)).
 
 ---
+
+## 0.1 Wat draait waar — lokaal vs. cloud
+
+Voordat je begint: het helpt enorm om te weten wat **op je eigen machine** draait en wat een
+**cloud-dienst** vereist. Dat bepaalt wat gratis/offline kan en waar je een account nodig hebt.
+
+```mermaid
+flowchart LR
+  subgraph LOCAL["🖥️ Jouw laptop — lokaal, gratis"]
+    OLL["Ollama + qwen3-coder:30b<br/>(agent-brein)"]
+    MAS["Mastra Playground<br/>testplan-agent + tools"]
+    ASS["Claude Code / editor"]
+    OLL --- MAS
+  end
+  subgraph CLOUD["☁️ Cloud — account nodig"]
+    VER["CloudCtrl web-app<br/>(GitHub Pages) — testdoelwit"]
+    BU["Browser Use<br/>draait echte browsers"]
+    OAI["OpenAI<br/>optioneel, nu inactief"]
+  end
+  MAS -->|"genereert testcases"| BU
+  BU -->|"voert uit op"| VER
+  MAS -.->|"switch: MODEL_PROVIDER=openai"| OAI
+```
+
+| Onderdeel | Waar | Kan het lokaal? |
+|---|---|---|
+| Agent-brein (LLM) | Lokaal **of** cloud | ✅ Lokaal via Ollama/qwen — met switch naar cloud |
+| Mastra Playground | Lokaal | ✅ altijd lokaal (`http://localhost:4111`) |
+| Testplan-agent | Lokaal | ✅ draait op je eigen model |
+| Coding assistant (Claude Code) | Lokaal | ✅ |
+| **Browser Use** (browser-agent) | **Cloud** | ❌ cloud-dienst; kan je `localhost` niet zien |
+| **CloudCtrl web-app** (testdoelwit) | **Cloud** (GitHub Pages) | ⚠️ draait ook lokaal, maar Browser Use Cloud bereikt localhost niet → deploy nodig |
+
+**De kernregel:** alles wat *redeneert* (de agent) kan lokaal; alles wat een *echte browser in de
+cloud* nodig heeft (Browser Use → CloudCtrl-URL) moet cloud zijn. Zie ook
+[Appendix F](#appendix-f--lokaal-draaien-met-qwen3-coder30b-ollama--de-switch) voor de model-switch.
 
 ## 1. Waar we mee eindigen
 
@@ -141,7 +178,7 @@ git --version    # aanwezig?
 - [ ] **Node.js ≥ 20** geïnstalleerd
 - [ ] **Editor met AI** (VS Code / Cursor) of een AI-CLI (Claude Code / Codex / OpenCode)
 - [ ] **GitHub-account** (heb je)
-- [ ] **Vercel-account** aangemaakt (voor het deployen van CloudCtrl en/of de Mastra-app)
+- [ ] **Hosting** voor CloudCtrl geregeld: GitHub Pages (geen account nodig) óf een Vercel-account
 - [ ] **Browser Use-account** aangemaakt + API-key genoteerd
 - [ ] **CloudCtrl staat live** (zie [Stap 1](#stap-1--cloudctrl-deployen)) — anders heeft de
       browser-agent geen doelwit
@@ -183,22 +220,52 @@ is je bewijs dat de hele exercitie waarde heeft — op jóuw feature.
 
 CloudCtrl is één self-contained `index.html` zonder build. Kies één optie:
 
-**Optie A — Vercel (aanbevolen, publieke URL):**
-```bash
-npm i -g vercel
-cd /pad/naar/CloudCtrl
-vercel            # volg de prompts; kies het project, geen build command nodig
-vercel --prod     # levert je productie-URL op
-```
+**Optie A — GitHub Pages (aanbevolen, het simpelst).** GitHub serveert je statische site gratis,
+direct vanaf je repo — geen extra account, geen build:
 
-**Optie B — lokaal serveren (sneller, maar Browser Use Cloud kan localhost niet altijd bereiken):**
+1. GitHub → repo `CloudCtrl` → **Settings → Pages**.
+2. Bij "Build and deployment": Source **Deploy from a branch** → branch **`main`** → map `/ (root)` → **Save**.
+3. Na ~1 min staat je site op **`https://dieboard.github.io/CloudCtrl/`**.
+
+Pages serveert **altijd `main`**, dus geen branch-gedoe.
+
+**Optie B — Vercel (alternatief, werkt net zo goed).** [vercel.com](https://vercel.com) → "Add New →
+Project" → repo importeren → preset "Other" → Deploy. Vercel redeployt automatisch bij push naar de
+ingestelde production-branch (Settings → Git → Production Branch). De CLI (`npx vercel`) is niet nodig.
+
+**Optie C — lokaal serveren (om zelf even te klikken, niet als Browser Use-doelwit).**
 ```bash
 npx serve .       # serveert index.html op http://localhost:3000
 ```
+> ⚠️ Browser Use **Cloud** draait in de cloud en kan jouw `localhost` niet zien. Voor de browser-agent
+> heb je dus Optie A of B nodig; Optie C is puur om zelf snel te testen.
 
-> ⚠️ Browser Use **Cloud** draait in de cloud en kan jouw `localhost` niet zien. Wil je Browser Use
-> Cloud gebruiken, deploy dan via Vercel (Optie A). Gebruik je een lokale browser-runner, dan is
-> Optie B prima.
+### Hoe hosting en branches samenhangen (de vraag die vaak blijft hangen)
+
+Dit stukje laat mensen makkelijk twijfelen — en in een workshop wil je het *begrijpen*, niet met een
+open vraag blijven zitten. Kort en foolproof:
+
+- Een statische host serveert **precies één branch** — wat daarop staat, is "live".
+  - **GitHub Pages:** die branch stel je in bij Settings → Pages (standaard **`main`**).
+  - **Vercel:** de "Production Branch" (standaard je repo-hoofdbranch, meestal `main`; aanpasbaar in
+    Settings → Git). Dáárom leek het alsof je "geen branch kon kiezen" — hij pakt gewoon standaard je
+    hoofdbranch.
+- **Browser Use kijkt naar géén branch** — alleen naar de URL die jij geeft. Wat daar staat, test hij.
+
+**Wat betekent dat in de praktijk?**
+- Werk je in een feature-branch, dan ziet de live-site (en dus de agent) die wijzigingen **nog niet** —
+  de host serveert `main`.
+- Wil je een `index.html`-wijziging live? Breng 'm naar de branch die de host serveert: **merge naar
+  `main`** (of push direct naar `main`). Daarna rebuildt de host vanzelf en verandert het "overal mee".
+
+**De valkuil → en de foolproof-regel:**
+- Valkuil: je test een URL die branch Y serveert terwijl je nieuwste code op branch X staat → je test
+  oude code en snapt niet waarom je fix niets doet.
+- Foolproof: **kies één host, weet welke branch die serveert, en zorg dat je testcode óók op die branch
+  staat.** Het simpelst: laat alles via `main` lopen en test de Pages-URL (die serveert `main`).
+
+**Verifiëren (10 sec):** twijfel je of de live-site je laatste wijziging heeft? Push een kleine,
+zichtbare wijziging naar `main` en ververs de URL. Zie je 'm → alles klopt.
 
 ✅ **Klaar als:** je de URL in een gewone browser opent, een stad zoekt en de grafiek verschijnt.
 Noteer de URL — die heb je in Stap 6 nodig.
@@ -220,7 +287,7 @@ Maak een `.env` met je sleutels:
 # .env  (NIET committen — staat in .gitignore)
 OPENAI_API_KEY=sk-...          # of ANTHROPIC_API_KEY, afhankelijk van de workshop
 BROWSER_USE_API_KEY=...        # uit je Browser Use-account (NOOIT committen)
-CLOUDCTRL_URL=https://cloud-ctrl-chi.vercel.app
+CLOUDCTRL_URL=https://dieboard.github.io/CloudCtrl/
 ```
 
 Start de Playground:
@@ -385,6 +452,23 @@ Vraag in de Playground:
 
 > "Genereer testcases voor PR 42 en scrumkaart CC-17."
 
+### Wat gebeurt er op de achtergrond? (en waarom het even kan duren)
+
+Als je die vraag verstuurt, draait deze **agentic loop**:
+
+1. Mastra stuurt je vraag + de systeeminstructies + de **tool-definities** naar het model (qwen via Ollama).
+2. Het model draait in Ollama, in je RAM/GPU. Bij de **eerste** call laadt het model éérst in het geheugen — dat is de "koude start" (bij een 30B-model al gauw ~2 min). Daarna blijft het warm en gaat het sneller.
+3. Het model besluit een tool te gebruiken en geeft een **tool-call** terug (bv. `read-pull-request`).
+4. Mastra **voert de tool uit** (leest het bestand) en stuurt het resultaat terug naar het model.
+5. Stap 3–4 herhalen (tweede tool: `read-scrum-card`) tot het model genoeg weet.
+6. Het model genereert het **eindantwoord** (de Gherkin-testcases).
+
+> ⏳ **Grote modellen zijn traag.** Elke stap hierboven is een volledige inferentie-pass over de
+> héle context. Bij een groot model (30B) duurt elke pass merkbaar lang, plús de koude start. Voelt
+> het te traag? Wissel naar een kleiner model of naar cloud — zie
+> [Appendix F.6](#f6-kleiner-model--minder-geheugen-en-sneller). In het **Traces**-tabblad zie je
+> live welke stap loopt, dus je ziet precies waar de tijd heen gaat.
+
 **Beoordeel de output als QA'er** (dit is de kern van je vak):
 
 - [ ] Zit **hoeveelheid = 0** erbij? (alles telt als regen)
@@ -455,7 +539,7 @@ De browser-agent zelf krijgt instructies die de [selector-kaart](#appendix-a--cl
 gebruiken. Voorbeeldtaak voor één case:
 
 ```
-Ga naar https://cloud-ctrl-chi.vercel.app
+Ga naar https://dieboard.github.io/CloudCtrl/
 Zoek in het veld met placeholder "Zoek een plaats of adres..." naar "Rotterdam" en klik "Zoek".
 Controleer daarna dat de geladen plaats OOK echt "Rotterdam" is voordat je verder gaat.
 Wacht tot de grafiek (canvas#rainChart) geladen is.
@@ -728,7 +812,7 @@ Plus de grens- en foutgevallen:
 
 | Symptoom | Oorzaak / oplossing |
 |---|---|
-| Browser Use ziet je app niet | Draait op `localhost`? Browser Use Cloud kan localhost niet bereiken — deploy via Vercel (Stap 1, Optie A). |
+| Browser Use ziet je app niet | Draait op `localhost`? Browser Use Cloud kan localhost niet bereiken — deploy via GitHub Pages of Vercel (Stap 1). |
 | Agent roept geen tools aan | `description` van de tool te vaag. Schrijf hem als instructie: wanneer, waarvoor. |
 | Twee runs = ander resultaat | Normaal (non-determinisme). Assert invarianten, niet exacte waarden (§2.4). |
 | Playground start niet | Node < 20? Check `node -v`. Ontbrekende `.env`-key? |
@@ -845,6 +929,25 @@ Mastra hergebruikt.
 - **Kwaliteit:** qwen dekte de grenswaarden en de 2×2-combinaties, maar was minder compleet dan
   een groot cloud-model (miste "geen data" en de monotonie-invariant). Goede vraag voor Tim: hoe
   stuur je een kleiner lokaal model naar volledigere output (prompting, few-shot, groter model)?
+
+### F.6 Kleiner model = minder geheugen (en sneller)
+
+Geheugengebruik ≈ **modelgewichten** (≈ schijfgrootte bij Q4-kwantisatie) + **KV-cache** (groeit met
+de contextlengte) + overhead. Een kleiner model kost dus fors minder RAM en is sneller — ten koste
+van kwaliteit.
+
+| Model | Schijf | Geheugen (indicatie) | Snelheid | Kwaliteit |
+|---|---|---|---|---|
+| `qwen3-coder:30b` | 18 GB | zwaar — op de test-laptop ~80 GB (incl. context/overhead) | traag | best |
+| `qwen2.5-coder:latest` (7B) | 4,7 GB | ~5–8 GB | snel | goed genoeg |
+
+- **Live meten:** `ollama ps` (terwijl een model geladen is) toont `SIZE` en of het op **GPU** of
+  **CPU** draait — de snelste manier om te zien wat een model écht kost.
+- **Wisselen zonder code te herschrijven:**
+  - In `agent-lab/`: `OLLAMA_MODEL=qwen2.5-coder:latest node agent-lab/generate-testcases.mjs`
+  - In het Mastra-project: pas het model aan in
+    [`src/mastra/model.ts`](cloudctrl-agents/src/mastra/model.ts) → `ollama('qwen2.5-coder:latest')`;
+    de dev-server herlaadt vanzelf.
 
 ---
 

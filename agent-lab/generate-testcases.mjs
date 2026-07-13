@@ -27,10 +27,16 @@ Genereer de testcases voor deze dubbele-drempel-feature.`;
 const { provider, model } = getModel();
 console.log(`\n>>> Provider: ${provider}  |  Model: ${model}\n`);
 console.time("generatietijd");
-const out = await chat([
-  { role: "system", content: system },
-  { role: "user", content: user },
-]);
-console.timeEnd("generatietijd");
-console.log("\n===== GEGENEREERDE TESTCASES =====\n");
-console.log(out);
+try {
+  const out = await chat([
+    { role: "system", content: system },
+    { role: "user", content: user },
+  ]);
+  console.timeEnd("generatietijd");
+  console.log("\n===== GEGENEREERDE TESTCASES =====\n");
+  console.log(out);
+} catch (err) {
+  console.timeEnd("generatietijd");
+  console.error(`\n[FOUT] ${err.message}`);
+  process.exit(1);
+}

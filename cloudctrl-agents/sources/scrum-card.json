@@ -1,0 +1,12 @@
+{
+  "id": "CC-17",
+  "title": "Als gebruiker wil ik neerslag filteren op hoeveelheid én kans",
+  "acceptanceCriteria": [
+    "Ik kan een minimale hoeveelheid (mm/u) instellen met een slider (0-1, stap 0.05)",
+    "Ik kan een minimale kans (%) instellen met een slider (0-100, stap 5)",
+    "Alleen neerslag die aan BEIDE drempels voldoet telt als regen",
+    "Een strengere drempel toont nooit meer regen dan een lossere drempel",
+    "De samenvatting en de grafiek zijn consistent met elkaar",
+    "Bij een afgelopen of lege voorspelling toont de app een nette melding zonder te crashen"
+  ]
+}
