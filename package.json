@@ -8,7 +8,9 @@
     "report": "node --env-file=.env agent-lab/pipeline.mjs",
     "report:all": "node --env-file=.env agent-lab/pipeline.mjs --browser",
     "report:browser": "node --env-file=.env agent-lab/pipeline.mjs --browser --skip-review",
+    "review": "node --env-file=.env agent-lab/review-testcases.mjs",
     "compare": "node --env-file=.env agent-lab/compare-reviews.mjs",
+    "browser": "node --env-file=.env agent-lab/browser-run.mjs",
     "studio-run": "node --env-file=.env agent-lab/studio-run.mjs"
   }
 }
