@@ -546,6 +546,13 @@ node agent-lab/review-testcases.mjs
 omgedraaide 0/0-case). Let op: de reviewer is **óók feilbaar** — het is een versterker, jij blijft de
 kwaliteitspoort. (Zien wat de agent stap voor stap doet? Gebruik het **Traces**-tabblad in Studio.)
 
+> 📌 **Kattebel (later testen):** je kunt ook **twee** modellen tegelijk laten reviewen en ze laten
+> vergelijken met `npm run compare` (default mistral vs llama3, plus een meta-judge die kritiek-eerst
+> scoort — geen optelsom). De meta-judge is nu `qwen3-coder:30b`, hetzelfde model dat de cases
+> genereerde → mogelijke **blinde vlek** (een model dat z'n eigen werk beoordeelt kan het verdedigen).
+> Nog te testen: een andere judge, bv. `JUDGE_MODEL=qwen2.5-coder:latest npm run compare`. De
+> reviewers blijven mistral + llama3.
+
 ✅ **Klaar als:** je een set Gherkin-cases hebt die de belangrijkste grenzen dekt. Bewaar ze
 (`sources/testcases.feature`) — die heb je nodig in Stap 6 en 10.
 
