@@ -18,14 +18,19 @@ const start = await fetch(`${BASE}/sessions`, { method: "POST", headers, body: J
 if (!start.ok) { console.error("START HTTP", start.status, await start.text()); process.exit(1); }
 const s = await start.json();
 console.log("Sessie gestart. id:", s.id);
-console.log("LIVE meekijken:", s.live_url || "(geen live_url geleverd)");
+console.log("Live-view verschijnt zo (zodra de cloud-browser opstart)...");
 
 const done = ["idle", "stopped", "error", "timed_out"];
+let liveShown = false;
 for (let i = 0; i < 120; i++) {
   await new Promise((r) => setTimeout(r, 3000));
   const res = await fetch(`${BASE}/sessions/${s.id}`, { headers });
   if (!res.ok) continue;
   const d = await res.json();
+  if (!liveShown && d.liveUrl) {
+    console.log(`\n🔴 LIVE MEEKIJKEN — open in je browser:\n   ${d.liveUrl}\n`);
+    liveShown = true;
+  }
   console.log(`[${(i * 3)}s] status: ${d.status}`);
   if (done.includes(d.status)) {
     console.log("\n===== RESULTAAT =====");
