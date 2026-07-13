@@ -1,0 +1,14 @@
+# Secrets — nooit committen
+.env
+.env.local
+.env.*.local
+
+# Node / Mastra (voor het agent-project)
+node_modules/
+.mastra/
+dist/
+.vercel/
+
+# OS / editor
+.DS_Store
+Thumbs.db
