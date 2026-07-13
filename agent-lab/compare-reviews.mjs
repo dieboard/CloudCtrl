@@ -38,7 +38,7 @@ const report = `# Review-vergelijking — ${stamp}
 ## Reviews (ruw)
 ${reviews.map((r, i) => `### Reviewer ${label(i)} — ${r.model}\n${r.text.trim()}`).join("\n\n")}
 
-## Vergelijking & eindscore
+## Eindbeoordeling
 ${verdict.trim()}
 `;
 await writeFile(outPath, report);

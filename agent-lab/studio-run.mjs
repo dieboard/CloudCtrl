@@ -83,7 +83,7 @@ ${cases}
 ## 2. Reviews (parallel)
 ${reviews.map((r2, i) => `### Reviewer ${label(i)} — ${r2.model}\n${r2.text.trim()}`).join("\n\n")}
 
-## 3. Vergelijking & eindscore
+## 3. Eindbeoordeling
 ${verdict.trim()}
 `;
 await writeFile(outPath, report);

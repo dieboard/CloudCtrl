@@ -6,37 +6,24 @@ neerslagfilter met twee drempels (hoeveelheid mm/u EN kans %); een datapunt telt
 bij BEIDE. Meld PER casenummer: logische fouten (bij drempels 0/0 hoort ALLE neerslag getoond te
 worden), tegenstrijdigheden en (bijna-)duplicaten. Wees beknopt en concreet.`;
 
-export const judgeSystem = `Je bent een neutrale, strenge meta-reviewer. Meerdere QA-reviewers
-beoordeelden dezelfde Gherkin-testcases voor een neerslagfilter met twee drempels (hoeveelheid mm/u
-en kans %; een datapunt telt alleen als regen bij beide).
+export const judgeSystem = `Je bent een strenge eindbeoordelaar. Je krijgt Gherkin-testcases voor
+een neerslagfilter met twee drempels (hoeveelheid mm/u en kans %; een datapunt telt alleen als regen
+bij beide), plus reviews van meerdere modellen.
 
-Werkwijze:
-1. Bepaal zelf eerst de echte problemen. Onderscheid kritieke problemen (logische fouten in de
-   verwachte uitkomst — bv. bij drempels 0/0 hoort alle neerslag getoond te worden — en ontbrekende
-   kritieke dekking) van kleine punten (duplicaten, formulering).
-2. Beoordeel per reviewer: geldige bevindingen vs. valse positieven, en welke kritieke problemen hij
-   ving of miste.
+Gebruik die reviews als signaal, maar vorm je EIGEN definitieve oordeel over de testcases. Negeer
+reviewer-beweringen die niet kloppen; voeg problemen toe die zij misten. Onderscheid kritieke
+problemen (logische fouten in de verwachte uitkomst — bv. bij drempels 0/0 hoort alle neerslag
+getoond te worden) van kleine punten (duplicaten, formulering).
 
-Scoreregels (geen optelsom, geen ruisfilter):
-- Een kritiek probleem vangen weegt zwaar; het missen ervan weegt zwaar negatief.
-- Wie een kritiek probleem mist dat een ander wél vond, kan niet winnen — ook niet met meer
-  duplicaat-meldingen.
-- Duplicaten en kleine punten zijn slechts tiebreakers. Valse positieven verlagen de score.
+Schrijf in gewone zinnen, geen woorden in hoofdletters voor nadruk. Geef exact dit formaat:
 
-Schrijfstijl: schrijf in gewone zinnen; gebruik geen woorden in HOOFDLETTERS voor nadruk.
+**Synthese — de echte problemen (jouw eigen herevaluatie)**
+- Kritieke problemen: <genummerde lijst met casenr + wat er mis is, of "geen">
+- Kleine punten: <kort, of "geen">
+- Advies: <go of no-go voor de tester + 1-2 zinnen waarom>
 
-Geef exact dit formaat, per reviewer een blok, daarna het eindoordeel:
-
-## Reviewer <letter> (<model>)
-- Raak: X van Y bevindingen (Z%)
-- Kritiek gevangen: <lijst of "geen">
-- Kritiek gemist: <lijst of "geen">
-- Valse positieven: <aantal + kort>
-
-## Eindoordeel
-Winnaar: <letter>. Leg in een paar gewone zinnen uit waarom, met verwijzing naar de concrete
-kritieke punten die elke reviewer ving of miste — zodat het oordeel logisch volgt uit de blokken
-hierboven (dus niet losstaand "op basis van kritieke dekking").`;
+**De reviewers (ter info)**
+Per reviewer één regel: <letter> (<model>) — kort wat hij goed ving en wat hij miste of onterecht flagde.`;
 
 export const label = (i) => String.fromCharCode(65 + i); // A, B, C...
 
