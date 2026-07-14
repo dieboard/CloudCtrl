@@ -347,6 +347,48 @@ met je agents en zie je elke tool-aanroep.
 
 ---
 
+### 2a. Reproduceerbaar testen met de Emei Shan-regenmock
+
+De `weather-workflow` kan live weer ophalen of een vaste momentopname gebruiken. De mock is
+opgenomen toen het op **Mount Emei (Sichuan)** regende: 0,10 mm actuele neerslag, lichte motregen,
+een maximumkans van 100% en temperaturen van 10,1 tot 18,5 °C.
+
+Start de workflow in Mastra Studio met:
+
+```json
+{
+  "city": "Emei Shan",
+  "dataMode": "mock"
+}
+```
+
+Gebruik voor een echte actuele API-run:
+
+```json
+{
+  "city": "Emei Shan",
+  "dataMode": "live"
+}
+```
+
+`live` is de standaard wanneer `dataMode` ontbreekt. Je kunt lokaal ook
+`WEATHER_DATA_MODE=mock` in `.env` zetten. Een expliciete waarde in de workflow-input gaat voor.
+
+Er zijn bewust twee opslagvormen:
+
+- `cloudctrl-agents/fixtures/weather/raw/emei-shan-rain-2026-07-14.json` bewaart de herkomst en
+  relevante ruwe meetwaarden. Dit is controleerbaar bewijs van de opname.
+- `cloudctrl-agents/src/mastra/fixtures/weather/emei-shan-rain.ts` bevat het genormaliseerde
+  `forecastSchema`-object dat tussen `fetch-weather` en `plan-activities` stroomt. Dit is de
+  herbruikbare workflowmock.
+
+De fixture wordt bij gebruik opnieuw door `forecastSchema.parse(...)` gevalideerd. Daardoor faalt
+een verouderde of ongeldige mock meteen bij `fetch-weather`, niet pas later in de LLM-stap.
+
+> De mock maakt de **weerinvoer** deterministisch. `plan-activities` blijft een LLM-aanroep en kan
+> dus nog variëren en lang duren. Mock ook de agent-output als je later een volledig snelle en
+> deterministische workflowtest wilt.
+
 ## Stap 3 — De bronnen klaarzetten
 
 **Doel:** de twee bronnen die de testplan-agent gaat lezen.

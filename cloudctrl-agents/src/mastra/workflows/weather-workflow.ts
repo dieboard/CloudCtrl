@@ -1,5 +1,11 @@
 import { createStep, createWorkflow } from '@mastra/core/workflows';
 import { z } from 'zod';
+import { emeiShanRainForecast } from '../fixtures/weather/emei-shan-rain';
+
+const weatherInputSchema = z.object({
+  city: z.string().describe('The city to get the weather for'),
+  dataMode: z.enum(['live', 'mock']).optional().describe('Use live Open-Meteo data or a fixed fixture'),
+});
 
 const forecastSchema = z.object({
   date: z.string(),
@@ -35,13 +41,22 @@ function getWeatherCondition(code: number): string {
 const fetchWeather = createStep({
   id: 'fetch-weather',
   description: 'Fetches weather forecast for a given city',
-  inputSchema: z.object({
-    city: z.string().describe('The city to get the weather for'),
-  }),
+  inputSchema: weatherInputSchema,
   outputSchema: forecastSchema,
   execute: async ({ inputData }) => {
     if (!inputData) {
       throw new Error('Input data not found');
+    }
+
+    const dataMode = inputData.dataMode ?? process.env.WEATHER_DATA_MODE ?? 'live';
+    if (dataMode === 'mock') {
+      const normalizedCity = inputData.city.trim().toLowerCase();
+      if (!['emei shan', 'mount emei', 'emeishan'].includes(normalizedCity)) {
+        throw new Error(`No weather fixture available for '${inputData.city}'. Use 'Emei Shan'.`);
+      }
+
+      // Validate the fixture through the same contract used by the next workflow step.
+      return forecastSchema.parse(emeiShanRainForecast);
     }
 
     const geocodingUrl = `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(inputData.city)}&count=1`;
@@ -170,9 +185,7 @@ const planActivities = createStep({
 
 const weatherWorkflow = createWorkflow({
   id: 'weather-workflow',
-  inputSchema: z.object({
-    city: z.string().describe('The city to get the weather for'),
-  }),
+  inputSchema: weatherInputSchema,
   outputSchema: z.object({
     activities: z.string(),
   })

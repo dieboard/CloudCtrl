@@ -1,0 +1,29 @@
+{
+  "source": "Open-Meteo",
+  "recordedAt": "2026-07-14T20:15:00+08:00",
+  "requestedLocation": "Emei Shan",
+  "resolvedLocation": {
+    "name": "Mount Emei",
+    "admin1": "Sichuan",
+    "country": "China",
+    "latitude": 29.52287,
+    "longitude": 103.33626
+  },
+  "forecastLocation": {
+    "latitude": 29.490334,
+    "longitude": 103.21387,
+    "elevation": 3058,
+    "timezone": "Asia/Shanghai"
+  },
+  "current": {
+    "time": "2026-07-14T20:15",
+    "precipitation": 0.1,
+    "weatherCode": 51
+  },
+  "dailySummary": {
+    "minimumTemperature": 10.1,
+    "maximumTemperature": 18.5,
+    "maximumPrecipitationProbability": 100
+  }
+}
+

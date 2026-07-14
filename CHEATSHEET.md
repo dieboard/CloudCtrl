@@ -7,6 +7,12 @@ Alle commando's draaien vanuit de **projectroot** (`CloudCtrl/`). ⚠️ = kost 
 npm run dev          # Mastra Studio → http://localhost:4111 (chat met agents, Traces)
 ```
 
+Emei Shan-regenscenario in **Workflows → weather-workflow → New workflow run**:
+```json
+{"city":"Emei Shan","dataMode":"mock"}
+```
+Gebruik `"dataMode":"live"` om dezelfde locatie actueel via Open-Meteo op te halen.
+
 ## 🤖 Pijplijn (1 knop, live opbouw)
 ```
 npm run report            # genereren → review → go/no-go-rapport        (gratis)
