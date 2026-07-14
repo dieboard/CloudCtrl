@@ -11,7 +11,7 @@ import { runReviews, judge, label } from "./review-lib.mjs";
 // Config kan via flags (werkt overal, ook Windows cmd) of via env-vars.
 const argv = process.argv.slice(2);
 const flag = (name) => argv.find((a) => a.startsWith(`--${name}=`))?.split("=").slice(1).join("=");
-const REVIEWERS = (flag("reviewers") || process.env.REVIEWERS || "mistral:latest,deepseek-coder-v2:16b").split(",").map((s) => s.trim());
+const REVIEWERS = (flag("reviewers") || process.env.REVIEWERS || "mistral:latest,llama3:latest").split(",").map((s) => s.trim());
 const JUDGE_MODEL = flag("judge") || process.env.JUDGE_MODEL || "qwen3-coder:30b";
 const file = argv.find((a) => !a.startsWith("--")) || "agent-lab/testcases.txt";
 const cases = await readFile(file, "utf8");

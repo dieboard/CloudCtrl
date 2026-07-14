@@ -539,7 +539,7 @@ vlekken) je gegenereerde cases beoordelen op logische fouten en dubbelingen. Dit
 verplichte stap:
 ```bash
 # 1. plak je Studio-output in agent-lab/testcases.txt
-# 2. laat een ANDER model (default deepseek-coder-v2:16b) ze nakijken:
+# 2. laat een ANDER model (default llama3) ze nakijken:
 node agent-lab/review-testcases.mjs
 ```
 `llama3` is een andere familie dan qwen, dus het vangt eerder fouten die qwen zelf mist (zoals een
@@ -552,8 +552,7 @@ kwaliteitspoort. (Zien wat de agent stap voor stap doet? Gebruik het **Traces**-
 > hetzelfde model dat de cases genereerde → mogelijke **zelf-bias** (een model dat z'n eigen werk
 > beoordeelt). **Bevinding:** `node agent-lab/compare-reviews.mjs --judge=llama3:latest` was **13s
 > i.p.v. ~3 min**, is een andere familie (minder bias) en gaf een prima synthese. Sterke kandidaat om
-> `JUDGE_MODEL` later standaard op een lichter/neutraal model te zetten. Reviewers zijn nu
-> mistral + deepseek-coder-v2:16b (16B, andere familie); llama3 is verschoven naar de judge-rol.
+> `JUDGE_MODEL` later standaard op een lichter/neutraal model te zetten. Reviewers blijven mistral + llama3.
 
 ✅ **Klaar als:** je een set Gherkin-cases hebt die de belangrijkste grenzen dekt. Bewaar ze
 (`sources/testcases.feature`) — die heb je nodig in Stap 6 en 10.
