@@ -8,7 +8,7 @@ import { readFile } from "node:fs/promises";
 import { chatStream } from "./models.mjs";
 import { reviewSystem } from "./review-lib.mjs";
 
-const model = process.env.REVIEW_MODEL || "llama3:latest";
+const model = process.env.REVIEW_MODEL || "deepseek-coder-v2:16b";
 const file = process.argv[2] || "agent-lab/testcases.txt";
 const cases = await readFile(file, "utf8");
 
