@@ -14,6 +14,7 @@ import { readFile, writeFile, mkdir, appendFile } from "node:fs/promises";
 import { resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 import { chatStream } from "./models.mjs";
+import { triage } from "./review-lib.mjs";
 
 const args = process.argv.slice(2);
 const doBrowser = args.includes("--browser");
@@ -125,6 +126,20 @@ Rapporteer beknopt: GESLAAGD / GEFAALD / NIET-UITVOERBAAR + wat je zag.`;
   }
 }
 
+// ---- Fase 4: triage (echte bug of slechte test?) ----
+const TRIAGE_MODEL = process.env.TRIAGE_MODEL || "llama3:latest";
+if (doBrowser && browserResults.length) {
+  banner(`FASE 4 · triage door ${TRIAGE_MODEL} (bug of slechte test?)`);
+  await log(`Fase 4: triage van ${browserResults.length} uitgevoerde cases.`);
+  for (const r of browserResults) {
+    try {
+      r.triage = await triage(r.caseText, `status=${r.status} · geslaagd=${r.successful}\n${r.output || ""}`, TRIAGE_MODEL);
+    } catch (err) {
+      r.triage = `[triage-fout] ${err.message}`;
+    }
+  }
+}
+
 // ---- Rapport (altijd) ----
 banner("RAPPORT");
 let report = `# CloudCtrl Testrapport — ${stamp}
@@ -145,10 +160,11 @@ ${review ? `_Aangedragen door ${REVIEW_MODEL} — een versterker, geen orakel. L
 - **Gewijzigde bestanden:** ${(pr.changedFiles || []).join(", ") || "(onbekend)"}
 `;
 if (doBrowser) {
-  report += `\n---\n\n## Browser Use-uitvoering (${browserResults.length} cases)\n`;
+  report += `\n---\n\n## Browser Use-uitvoering + triage (${browserResults.length} cases)\n`;
   for (const r of browserResults) {
-    report += `\n### Case ${r.i}\n${r.caseText}\n\n**Status:** ${r.status} · **Geslaagd:** ${r.successful ?? "-"}\n\n**Waarneming:**\n${r.output || "(leeg)"}\n`;
+    report += `\n### Case ${r.i}\n${r.caseText}\n\n**Status:** ${r.status} · **Geslaagd:** ${r.successful ?? "-"}\n\n**Waarneming:**\n${r.output || "(leeg)"}\n\n**Triage:** ${r.triage || "(niet uitgevoerd)"}\n`;
   }
+  report += `\n> **De lus sluiten (jouw beslissing).** Per case: *echte bug* → log/fix de app, de testcase blijft. *Slechte test* → herbouw alléén die case en voer 'm opnieuw uit. **Stop** als er geen "slechte test" meer over is (alle fouten zijn echte bugs), jij aftekent, of je aan je credit-/iteratielimiet zit.\n`;
 } else {
   report += `\n---\n\n_Browser Use (Fase 3) niet uitgevoerd. Draai met \`--browser\` om (na go) de eerste ${BROWSER_LIMIT} cases echt te testen._\n`;
 }

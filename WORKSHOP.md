@@ -184,6 +184,25 @@ en `npm run report:all` (1-click, inclusief Browser Use).
 > verificatie-pijplijn, niet over *wanneer* in het ontwikkelproces je test. Twee verschillende
 > assen — beide nuttig, maar niet hetzelfde.
 
+### 2.8 De kwaliteitslus sluiten (en wanneer hij stopt)
+LLM's (genereren, reviewen, synthese) geven **meningen** — geen grondwaarheid. De enige objectieve
+check is **uitvoeren op de echte app** (Browser Use): dan blijkt of een verwachting klopt. Daarna
+komt de **triage** (Fase 4): is een afwijking een *echte app-bug* of een *slechte testcase*?
+
+- *Echte bug* → log/fix de app; de testcase blijft (die ving iets echts).
+- *Slechte test* → herbouw alléén die case en voer 'm opnieuw uit.
+
+De pijplijn draait deze triage automatisch na Browser Use en zet per case een voorstel in het rapport
+(`echte bug` / `slechte test` / `onduidelijk` + actie). **Jij bevestigt** — de triage is de stopklep.
+
+**Wanneer stopt de lus (zodat hij niet oneindig is)?** Het doel is *betrouwbare tests*, niet een
+*bugvrije app*. Stop als:
+- er **geen "slechte test" meer over is** (alle resterende fouten zijn echte bugs → naar het dev-spoor);
+- **jij aftekent** ("goed genoeg");
+- je aan je **max-iteraties** of **credit-/tijdbudget** zit (harde cap tegen op-hol-slaan).
+
+Nooit volledig autonoom: **mens + cap + convergentie** houden de lus eindig.
+
 ---
 
 ## 3. Voorbereiding & checklist

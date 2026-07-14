@@ -10,7 +10,7 @@ npm run dev          # Mastra Studio → http://localhost:4111 (chat met agents,
 ## 🤖 Pijplijn (1 knop, live opbouw)
 ```
 npm run report            # genereren → review → go/no-go-rapport        (gratis)
-npm run report:all        # + Browser Use uitvoeren                    ⚠️ credits
+npm run report:all        # + Browser Use + Fase 4 triage             ⚠️ credits
 npm run report:browser    # genereren + Browser Use, review overslaan   ⚠️ credits
 ```
 

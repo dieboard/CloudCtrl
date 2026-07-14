@@ -42,3 +42,22 @@ export async function judge(cases, reviews, judgeModel) {
     `TESTCASES:\n${cases}\n\n` + reviews.map((r, i) => `REVIEW ${label(i)} (${r.model}):\n${r.text}`).join("\n\n");
   return chat([{ role: "system", content: judgeSystem }, { role: "user", content: judgeUser }], { model: judgeModel, maxTokens: 1500 });
 }
+
+// Fase 4 — triage: gegeven wat de ECHTE app deed, is een afwijking een echte bug of een slechte test?
+export const triageSystem = `Je bent een QA-triage-assistent voor CloudCtrl (neerslagfilter met twee
+drempels: hoeveelheid mm/u EN kans %; een datapunt telt als regen bij beide). Een testcase is
+uitgevoerd op de ECHTE app. Bepaal of een eventuele afwijking waarschijnlijk een ECHTE APP-BUG is,
+of een SLECHTE TESTCASE (verkeerde verwachting, flaky assert op live weerdata, of niet uitvoerbaar).
+
+Bekend écht probleem: de samenvatting gebruikt \`>\` en de grafiek \`>=\` → bij een datapunt exact
+gelijk aan de drempel tonen ze verschillend. Dat is een echte bug (testcase die dat vangt = goed).
+
+Antwoord in exact 3 regels, gewone zinnen:
+Classificatie: ECHTE BUG | SLECHTE TEST | ONDUIDELIJK
+Reden: <1 zin>
+Actie: <app fixen/loggen> OF <testcase herbouwen: hoe>`;
+
+export async function triage(caseText, observation, model) {
+  const user = `TESTCASE:\n${caseText}\n\nWAARNEMING OP DE ECHTE APP:\n${observation}`;
+  return chat([{ role: "system", content: triageSystem }, { role: "user", content: user }], { model, maxTokens: 300 });
+}
