@@ -13,22 +13,39 @@ Emei Shan-regenscenario in **Workflows → weather-workflow → New workflow run
 ```
 Gebruik `"dataMode":"live"` om dezelfde locatie actueel via Open-Meteo op te halen.
 
-## 🤖 Pijplijn (1 knop, live opbouw)
+## 🤖 Alles in één keer
 ```
-npm run report            # genereren → review → go/no-go-rapport        (gratis)
-npm run report:all        # + Browser Use + Fase 4 triage             ⚠️ credits
-npm run report:browser    # genereren + Browser Use, review overslaan   ⚠️ credits
+npm run all               # genereren → review → Playwright → gecombineerd rapport
+npm run all:browser       # hetzelfde + Browser Use                    ⚠️ credits
 ```
 
-## 🧩 Los draaien (elke fase apart)
+`npm run report:playwright` is een alias van de veilige `all`-route. Deze voert alleen reeds
+goedgekeurde Playwright-code uit; nieuwe gegenereerde cases gaan eerst langs de menselijke gate.
+
+## 🎭 Playwright (primair regressievangnet)
 ```
-node agent-lab/generate-testcases.mjs   # alleen testcases genereren (qwen)
-npm run review                          # analyse met 1 LLM   (leest agent-lab/testcases.txt)
-npm run compare                         # analyse met 2 LLM's parallel + meta-judge
-npm run compare:3                       # analyse met 3 LLM's (mistral + llama3 + qwen2.5-coder)
-npm run browser                         # 1 Browser Use-run + live-view-URL        ⚠️ credits
+npm run test:e2e          # headless uitvoeren + HTML/JSON-rapport
+npm run test:e2e:headed   # zichtbaar browservenster
+npm run test:e2e:ui       # interactieve Playwright UI
+npm run test:e2e:report   # laatste HTML-rapport openen
 ```
-> Voor `review`/`compare`: plak je testcases eerst in **`agent-lab/testcases.txt`**.
+Nieuwe goedgekeurde testcase toevoegen: vraag je coding agent om **`$write-e2e-test`** te gebruiken.
+De skill schrijft de test, voert `npm run test:e2e` uit en bewaart bewijs bij failures.
+
+## 🧩 Iedere fase apart
+```
+npm run phase:1          # genereren; schrijft agent-lab/run/testcases.txt + rapport
+npm run phase:2          # review met 1 LLM; leest fase 1 en schrijft reviewrapport
+npm run phase:2:compare  # review met 2 LLM's parallel + meta-judge
+npm run phase:3          # goedgekeurde Playwright-suite headless + rapport
+npm run phase:3:headed   # dezelfde suite in een zichtbaar browservenster
+npm run phase:4          # optionele Browser Use-controle               ⚠️ credits
+```
+
+Fase 2 bouwt voort op Fase 1. Je mag `agent-lab/run/testcases.txt` tussendoor beoordelen of aanpassen.
+Gebruik daarna `$write-e2e-test` in Codex/Cursor/Claude om een goedgekeurde case aan Fase 3 toe te
+voegen. `npm run review`, `compare`, `compare:3`, `browser` en de oudere `report:*`-commando's
+blijven als handige aliases bestaan.
 
 ## 🔧 Handige knoppen
 > Env-vars hieronder werken in **PowerShell/bash**. In **Windows cmd**: `set VAR=waarde&& npm run ...`

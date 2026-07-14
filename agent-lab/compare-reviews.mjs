@@ -14,7 +14,16 @@ const flag = (name) => argv.find((a) => a.startsWith(`--${name}=`))?.split("=").
 const REVIEWERS = (flag("reviewers") || process.env.REVIEWERS || "mistral:latest,llama3:latest").split(",").map((s) => s.trim());
 const JUDGE_MODEL = flag("judge") || process.env.JUDGE_MODEL || "qwen3-coder:30b";
 const file = argv.find((a) => !a.startsWith("--")) || "agent-lab/testcases.txt";
-const cases = await readFile(file, "utf8");
+let cases;
+try {
+  cases = await readFile(file, "utf8");
+} catch (error) {
+  if (error.code === "ENOENT" && file === "agent-lab/run/testcases.txt") {
+    console.error("\n[FOUT] Resultaat van fase 1 ontbreekt. Voer eerst `npm run phase:1` uit.\n");
+    process.exit(1);
+  }
+  throw error;
+}
 
 const stamp = new Date().toISOString().replace(/[:.]/g, "-").slice(0, 19);
 const outPath = `agent-lab/reports/compare-${stamp}.md`;

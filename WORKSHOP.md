@@ -385,9 +385,79 @@ Er zijn bewust twee opslagvormen:
 De fixture wordt bij gebruik opnieuw door `forecastSchema.parse(...)` gevalideerd. Daardoor faalt
 een verouderde of ongeldige mock meteen bij `fetch-weather`, niet pas later in de LLM-stap.
 
+Dezelfde regenmomentopname is beschikbaar in de webapp via:
+
+```text
+http://127.0.0.1:4173/?fixture=emei-shan-rain
+https://dieboard.github.io/CloudCtrl/?fixture=emei-shan-rain
+```
+
+De webfixture maakt tijden relatief aan het moment van laden. Daardoor is de voorspelling morgen
+niet "afgelopen". De pagina markeert zichzelf met `body[data-weather-source="mock"]`; een E2E-test
+moet dit eerst controleren om te voorkomen dat per ongeluk live weer wordt getest.
+
 > De mock maakt de **weerinvoer** deterministisch. `plan-activities` blijft een LLM-aanroep en kan
 > dus nog variëren en lang duren. Mock ook de agent-output als je later een volledig snelle en
 > deterministische workflowtest wilt.
+
+### 2b. Nieuwe standaarddoorloop: Playwright eerst
+
+Gebruik Playwright als primair regressievangnet en Browser Use alleen voor exploratie of een
+expliciete onafhankelijke controle:
+
+```text
+Fase 1  testcases genereren                   npm run phase:1
+        ↓ schrijft agent-lab/run/testcases.txt
+Fase 2  reviewen + reviewrapport              npm run phase:2
+        alternatief: 2 reviewers              npm run phase:2:compare
+        ↓ menselijke go/no-go + $write-e2e-test bij een nieuwe case
+Fase 3  goedgekeurde Playwright-suite         npm run phase:3
+        zichtbaar browservenster              npm run phase:3:headed
+        ↓
+Fase 4  Browser Use (optioneel)               npm run phase:4       ⚠ credits
+```
+
+Alles in één keer, inclusief live console-uitvoer en gecombineerd rapport:
+
+```text
+npm run all          # Fase 1 + review + bestaande goedgekeurde Playwright-suite
+npm run all:browser  # idem, plus Browser Use (kost credits)
+```
+
+`npm run all` (alias: `npm run report:playwright`) is de dagelijkse éénknopsroute: hij genereert/reviewt cases, voert de
+**bestaande** Playwright-regressiesuite uit en schrijft een gecombineerd Markdown-rapport. Hij laat
+niet automatisch ongereviewde LLM-output als testcode uitvoeren. Als een nieuwe case wordt
+goedgekeurd, gebruik dan eerst `$write-e2e-test`; daarna neemt de éénknopsroute hem vanzelf mee.
+
+### Een projectskill toevoegen en starten
+
+Een projectskill staat in `.agents/skills/<skillnaam>/SKILL.md`. De eerste regels zijn YAML:
+
+```yaml
+---
+name: mijn-skill
+description: Wanneer en waarvoor de coding agent deze skill moet gebruiken.
+---
+```
+
+Daaronder leg je de vaste werkwijze, kwaliteitsregels en vereiste verificatie vast. Een optioneel
+`.agents/skills/<skillnaam>/agents/openai.yaml` geeft de skill een leesbare naam en startprompt.
+Start de meegeleverde skill expliciet in je coding-agentchat met bijvoorbeeld:
+
+```text
+Gebruik $write-e2e-test om testcase 5 als Playwright-test toe te voegen en uit te voeren.
+```
+
+De agent leest dan `.agents/skills/write-e2e-test/SKILL.md`, schrijft of wijzigt de test en moet
+`npm run test:e2e` echt uitvoeren. Een skill is dus geen apart Node-proces: het is een herbruikbare
+werkinstructie voor Codex, Cursor, Claude of een andere ondersteunde coding agent.
+
+Bewijs wordt opgeslagen in:
+
+- `playwright-report/index.html` — visueel HTML-rapport;
+- `test-results/results.json` — machineleesbaar resultaat;
+- `test-results/artifacts/` — trace, screenshot en video bij failures;
+- `agent-lab/reports/playwright-pipeline-*.md` — gecombineerd analyse/E2E-besluit.
 
 ## Stap 3 — De bronnen klaarzetten
 

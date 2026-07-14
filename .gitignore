@@ -11,6 +11,9 @@ dist/
 
 # Run-artefacten (gegenereerde rapporten/logs)
 agent-lab/reports/
+playwright-report/
+test-results/
+agent-lab/run/
 
 # OS / editor
 .DS_Store

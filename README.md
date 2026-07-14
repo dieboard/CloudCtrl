@@ -51,6 +51,23 @@ By adjusting sliders for both **amount (mm/h)** and **probability (%)**, you eff
 
 As this is a self-contained webpage with no build process, you can use the project locally by simply opening the `index.html` file in any modern web browser. For online deployment, a static hosting service like GitHub Pages, Netlify, or Vercel can be used.
 
+### Deterministic E2E testing
+
+The workshop branch includes a time-relative Mount Emei rain fixture. Open
+`/?fixture=emei-shan-rain` to load deterministic rain data instead of the live weather API.
+
+```bash
+npm run phase:1          # generate cases and write agent-lab/run/testcases.txt
+npm run phase:2          # review the generated/edited cases
+npm run phase:3          # run the approved Playwright regression suite
+npm run all              # analysis + approved Playwright suite + combined report
+npm run all:browser      # same flow plus Browser Use (uses cloud credits)
+```
+
+Browser Use remains optional for exploratory or independent cloud-browser validation.
+Use the project skill `$write-e2e-test` in your coding-agent chat to turn an approved testcase into
+a verified Playwright test before it becomes part of phase 3.
+
 ## Build-Me Tutorial
 
 This project includes a `BUILDME.md` file that provides a step-by-step guide on how to construct the entire application from scratch using a series of prompts. This is a great way to understand the project's architecture and development process. Following the guide will result in the application shown below.

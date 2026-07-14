@@ -19,17 +19,25 @@ import { triage } from "./review-lib.mjs";
 const args = process.argv.slice(2);
 const doBrowser = args.includes("--browser");
 const doReview = !args.includes("--skip-review");
+const fixtureArg = args.find((arg) => arg.startsWith("--fixture="));
+const fixtureName = fixtureArg?.split("=")[1] || null;
 
 const BROWSER_LIMIT = Number(process.env.BROWSER_LIMIT || 3);
 const REVIEW_MODEL = process.env.REVIEW_MODEL || "llama3:latest";
-const TARGET = process.env.CLOUDCTRL_URL || "https://dieboard.github.io/CloudCtrl/";
+const BASE_TARGET = process.env.CLOUDCTRL_URL || "https://dieboard.github.io/CloudCtrl/";
+const TARGET = fixtureName
+  ? `${BASE_TARGET}${BASE_TARGET.includes("?") ? "&" : "?"}fixture=${encodeURIComponent(fixtureName)}`
+  : BASE_TARGET;
 const BASE = "https://api.browser-use.com/api/v3";
 
 const stamp = new Date().toISOString().replace(/[:.]/g, "-").slice(0, 19);
 const REPORT_DIR = "agent-lab/reports";
+const WORK_DIR = "agent-lab/run";
+const WORK_FILE = `${WORK_DIR}/testcases.txt`;
 const reportPath = `${REPORT_DIR}/report-${stamp}.md`;
 const logPath = `${REPORT_DIR}/log-${stamp}.txt`;
 await mkdir(REPORT_DIR, { recursive: true });
+await mkdir(WORK_DIR, { recursive: true });
 
 async function log(line) {
   const l = `[${new Date().toISOString()}] ${line}`;
@@ -72,6 +80,9 @@ await log(`Start. ${phases.join(" · ")} (+rapport).`);
 
 const pr = JSON.parse(await readFile("sources/pr-42.json", "utf8"));
 const card = JSON.parse(await readFile("sources/scrum-card.json", "utf8"));
+const fixture = fixtureName
+  ? JSON.parse(await readFile(`fixtures/weather/${fixtureName}-web.json`, "utf8"))
+  : null;
 
 // ---- Fase 1: genereren (altijd, live) ----
 banner("FASE 1 · genereren (live)");
@@ -82,11 +93,13 @@ een geval 'geen data', en VERPLICHT een case waarin een datapunt EXACT gelijk is
 Assert invarianten, geen exacte aantallen. Genereer MAXIMAAL 12 UNIEKE cases; zorg dat de verwachte
 uitkomst logisch klopt (bij drempels 0/0 hoort ALLE neerslag getoond te worden). Geef ALLEEN
 genummerde Gherkin-scenario's terug.`;
-const genUser = `PULL REQUEST:\n${JSON.stringify(pr, null, 2)}\n\nSCRUMKAART:\n${JSON.stringify(card, null, 2)}`;
+const genUser = `PULL REQUEST:\n${JSON.stringify(pr, null, 2)}\n\nSCRUMKAART:\n${JSON.stringify(card, null, 2)}${fixture ? `\n\nDETERMINISTISCHE TESTFIXTURE:\n${JSON.stringify(fixture, null, 2)}\n\nGenereer verwachtingen op basis van deze bekende fixturewaarden; gebruik geen aannames over live weer.` : ""}`;
 const generated = await chatStream([{ role: "system", content: genSystem }, { role: "user", content: genUser }], { maxTokens: 2500 });
 console.log("");
 const cases = parseCases(generated);
+await writeFile(WORK_FILE, generated.trim() + "\n");
 await log(`Fase 1 klaar: ${cases.length} cases.`);
+await log(`Werkbestand bijgewerkt: ${WORK_FILE}`);
 
 // ---- Fase 2: review (optioneel, live) ----
 let review = null;
@@ -109,7 +122,7 @@ if (doBrowser) {
   for (const [i, caseText] of cases.slice(0, BROWSER_LIMIT).entries()) {
     await log(`  case ${i + 1} naar Browser Use...`);
     const task = `Test het volgende scenario op ${TARGET}.
-Begin ALTIJD met: ga naar ${TARGET}, zoek "Rotterdam" via #locationInput + #searchButton en wacht tot #rainChart geladen is.
+Begin ALTIJD met: ga naar ${TARGET}${fixture ? `, controleer body[data-weather-source="mock"] en controleer dat Mount Emei geladen is. Zoek GEEN andere plaats` : `, zoek "Rotterdam" via #locationInput + #searchButton`} en wacht tot #rainChart geladen is.
 Gebruik ELEMENT-ID's (niet labeltekst, UI kan EN/NL zijn): #amountThresholdSlider (0..1), #probThresholdSlider (0..100), #filterToggle, #forecastSummary, #rainChart.
 SCENARIO:
 ${caseText}
@@ -146,6 +159,7 @@ let report = `# CloudCtrl Testrapport — ${stamp}
 
 > **Go/no-go voor de tester.** Beoordeel dit rapport en beslis of de cases naar Browser Use mogen.
 > Bron: PR #${pr.number} + scrumkaart ${card.id}. Doelwit: ${TARGET}
+> Testdata: ${fixture ? `fixture ${fixture.id} (opgenomen ${fixture.recordedAt})` : "live"}
 > Gedraaide fasen: ${phases.join(", ")}.
 
 ## 1. Overgebleven testcases (${cases.length})

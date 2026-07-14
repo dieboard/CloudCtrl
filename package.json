@@ -12,6 +12,23 @@
     "compare": "node --env-file=.env agent-lab/compare-reviews.mjs",
     "compare:3": "node --env-file=.env agent-lab/compare-reviews.mjs --reviewers=mistral:latest,llama3:latest,qwen2.5-coder:latest",
     "browser": "node --env-file=.env agent-lab/browser-run.mjs",
-    "studio-run": "node --env-file=.env agent-lab/studio-run.mjs"
+    "studio-run": "node --env-file=.env agent-lab/studio-run.mjs",
+    "phase:1": "node --env-file=.env agent-lab/pipeline.mjs --skip-review --fixture=emei-shan-rain",
+    "phase:2": "node --env-file=.env agent-lab/review-testcases.mjs agent-lab/run/testcases.txt",
+    "phase:2:compare": "node --env-file=.env agent-lab/compare-reviews.mjs agent-lab/run/testcases.txt",
+    "phase:3": "playwright test",
+    "phase:3:headed": "playwright test --headed",
+    "phase:4": "node --env-file=.env agent-lab/browser-run.mjs",
+    "test:e2e": "playwright test",
+    "test:e2e:headed": "playwright test --headed",
+    "test:e2e:ui": "playwright test --ui",
+    "test:e2e:report": "playwright show-report",
+    "report:playwright": "node agent-lab/playwright-pipeline.mjs",
+    "all": "node agent-lab/playwright-pipeline.mjs",
+    "all:browser": "node --env-file=.env agent-lab/playwright-pipeline.mjs --browser"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.61.1",
+    "http-server": "^14.1.1"
   }
 }

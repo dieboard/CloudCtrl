@@ -202,19 +202,22 @@
 
         // --- GLOBALE STATE ---
         let myChart = null, fullWeatherData = null, currentView = 'detail', currentLocation = { lat: null, lon: null };
+        const requestedFixture = new URLSearchParams(window.location.search).get('fixture');
 
         // --- INITIATIE ---
         document.addEventListener('DOMContentLoaded', () => {
             document.documentElement.lang = lang;
             applyTranslations();
             allDomElements.filterToggle.checked = true;
-            if (navigator.geolocation) { updateStatus(t('requesting_location'), 'yellow'); navigator.geolocation.getCurrentPosition(onGeoSuccess, onGeoError); } else { geocodeAndFetchWeather('Almere'); }
+            if (requestedFixture) {
+                loadWeatherFixture(requestedFixture);
+            } else if (navigator.geolocation) { updateStatus(t('requesting_location'), 'yellow'); navigator.geolocation.getCurrentPosition(onGeoSuccess, onGeoError); } else { geocodeAndFetchWeather('Almere'); }
             allDomElements.locationForm.addEventListener('submit', (e) => { e.preventDefault(); if (allDomElements.locationInput.value) geocodeAndFetchWeather(allDomElements.locationInput.value); });
             allDomElements.btnDetail.addEventListener('click', () => switchView('detail'));
             allDomElements.btnOverview.addEventListener('click', () => switchView('overview'));
-            allDomElements.refreshButton.addEventListener('click', () => { if (myChart) { myChart.resetZoom(); } if (currentLocation.lat) { fetchWeatherData(currentLocation.lat, currentLocation.lon); } });
-            allDomElements.amountThresholdSlider.addEventListener('input', () => { document.getElementById('amountThresholdValue').textContent = parseFloat(allDomElements.amountThresholdSlider.value).toFixed(2); updateChartView(); });
-            allDomElements.probThresholdSlider.addEventListener('input', () => { document.getElementById('probThresholdValue').textContent = allDomElements.probThresholdSlider.value; updateChartView(); });
+            allDomElements.refreshButton.addEventListener('click', () => { if (myChart) { myChart.resetZoom(); } if (requestedFixture) { loadWeatherFixture(requestedFixture); } else if (currentLocation.lat) { fetchWeatherData(currentLocation.lat, currentLocation.lon); } });
+            allDomElements.amountThresholdSlider.addEventListener('input', () => { document.getElementById('amountThresholdValue').textContent = parseFloat(allDomElements.amountThresholdSlider.value).toFixed(2); updateChartView(); createForecastSummary(); });
+            allDomElements.probThresholdSlider.addEventListener('input', () => { document.getElementById('probThresholdValue').textContent = allDomElements.probThresholdSlider.value; updateChartView(); createForecastSummary(); });
             allDomElements.filterToggle.addEventListener('change', () => {
                 allDomElements.filterControls.style.display = allDomElements.filterToggle.checked ? 'grid' : 'none';
                 updateChartView();
@@ -310,6 +313,42 @@
             } catch (error) { updateStatus(t('fetch_error'), 'red', error.message);
             } finally { allDomElements.chartLoader.style.display = 'none'; }
         }
+
+        function relativeTimes(count, stepMinutes) {
+            const start = new Date();
+            start.setSeconds(0, 0);
+            return Array.from({ length: count }, (_, index) => new Date(start.getTime() + index * stepMinutes * 60000).toISOString());
+        }
+
+        async function loadWeatherFixture(name) {
+            updateStatus('Mock laden...', 'yellow');
+            allDomElements.chartLoader.style.display = 'flex';
+            try {
+                if (name !== 'emei-shan-rain') throw new Error(`Onbekende fixture: ${name}`);
+                const fixtureUrl = new URL('fixtures/weather/emei-shan-rain-web.json', window.location.href);
+                const response = await fetch(fixtureUrl);
+                if (!response.ok) throw new Error(`Fixture niet geladen: ${response.statusText}`);
+                const fixture = await response.json();
+                const hourly = fixture.hourly;
+                const minutely = fixture.minutely_15;
+                fullWeatherData = {
+                    hourly: { ...hourly, time: relativeTimes(hourly.precipitation.length, 60) },
+                    minutely_15: { ...minutely, time: relativeTimes(minutely.precipitation.length, 15) }
+                };
+                currentLocation = { lat: fixture.location.latitude, lon: fixture.location.longitude };
+                allDomElements.locationElement.textContent = `${fixture.location.name}, ${fixture.location.admin1}`;
+                allDomElements.locationDetails.textContent = `MOCK · ${fixture.id} · ${fixture.location.latitude.toFixed(4)}, ${fixture.location.longitude.toFixed(4)}`;
+                document.body.dataset.weatherSource = 'mock';
+                window.__CLOUDCTRL_TEST_DATA__ = { fixture, fullWeatherData };
+                switchView(currentView);
+                createForecastSummary();
+                updateStatus('Mock actief', 'green', fixture.id);
+            } catch (error) {
+                updateStatus('Mock-fout', 'red', error.message);
+            } finally {
+                allDomElements.chartLoader.style.display = 'none';
+            }
+        }
         
         function createForecastSummary() {
              if (!fullWeatherData?.hourly) { allDomElements.forecastSummary.textContent = "Geen voorspelling beschikbaar."; return; }
@@ -320,7 +359,7 @@
 
             const amountThreshold = parseFloat(allDomElements.amountThresholdSlider.value);
             const probThreshold = parseInt(allDomElements.probThresholdSlider.value);
-            const nextRainIndex = precipitation.slice(startIndex).findIndex((p, i) => p > amountThreshold && precipitation_probability[startIndex + i] > probThreshold);
+            const nextRainIndex = precipitation.slice(startIndex).findIndex((p, i) => p >= amountThreshold && precipitation_probability[startIndex + i] >= probThreshold);
             const currentTemp = Math.round(temperature_2m[startIndex]);
             const currentDescription = t('weather_desc')[weathercode[startIndex]] || "unknown";
 
@@ -530,6 +569,8 @@
                     }
                 });
             }
+            // Testhaak: Playwright/Browser Use kan de getekende datasets objectief inspecteren.
+            window.__CLOUDCTRL_CHART__ = myChart;
         }
     </script>
 </body>

@@ -1,0 +1,7 @@
+interface:
+  display_name: "Write CloudCtrl E2E Test"
+  short_description: "Write and verify deterministic Playwright tests"
+  default_prompt: "Use $write-e2e-test to turn an approved CloudCtrl testcase into a verified Playwright E2E test."
+
+policy:
+  allow_implicit_invocation: true
