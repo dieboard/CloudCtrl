@@ -29,6 +29,9 @@ npm run test:e2e:headed   # zichtbaar browservenster
 npm run test:e2e:ui       # interactieve Playwright UI
 npm run test:e2e:report   # laatste HTML-rapport openen
 ```
+Bij een failure staan screenshot, trace en video onder `test-results/artifacts/<testnaam>/` en in
+het HTML-rapport onder de gefaalde testcase → **Attachments**. Bewaar belangrijk bewijs vóór een
+volgende run; Playwright bouwt `test-results` opnieuw op.
 Nieuwe goedgekeurde testcase toevoegen: vraag je coding agent om **`$write-e2e-test`** te gebruiken.
 De skill schrijft de test, voert `npm run test:e2e` uit en bewaart bewijs bij failures.
 

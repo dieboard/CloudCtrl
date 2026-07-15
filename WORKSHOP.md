@@ -459,6 +459,11 @@ Bewijs wordt opgeslagen in:
 - `test-results/artifacts/` — trace, screenshot en video bij failures;
 - `agent-lab/reports/playwright-pipeline-*.md` — gecombineerd analyse/E2E-besluit.
 
+Open in het HTML-rapport een gefaalde testcase en kijk bij **Attachments** voor de screenshot,
+trace en video. Dezelfde bestanden staan onder `test-results/artifacts/<testnaam>/`. Een nieuwe
+Playwright-run bouwt deze uitvoermap opnieuw op; kopieer bewijs dat je langdurig wilt bewaren naar
+een apart testrapport of ticketsysteem.
+
 ## Stap 3 — De bronnen klaarzetten
 
 **Doel:** de twee bronnen die de testplan-agent gaat lezen.

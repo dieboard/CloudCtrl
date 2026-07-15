@@ -57,4 +57,23 @@ test.describe('CloudCtrl · Emei Shan regenfixture', () => {
     expect(visibleAmounts.length).toBeGreaterThan(0);
     expect(visibleAmounts.every((value: number) => value >= 1)).toBe(true);
   });
+
+  test('wisselt zichtbaar tussen Detail (6u) en Overzicht (24u)', async ({ page }) => {
+    const chartMaximum = () => page.evaluate(() => {
+      const chart = (window as any).__CLOUDCTRL_CHART__;
+      return Math.max(...chart.data.datasets[0].data);
+    });
+
+    await expect(page.locator('#btnDetail')).toHaveClass(/bg-cyan-600/);
+    await expect.poll(chartMaximum).toBe(1.2);
+
+    await page.locator('#btnOverview').click();
+    await expect(page.locator('#btnOverview')).toHaveClass(/bg-cyan-600/);
+    await expect(page.locator('#btnDetail')).not.toHaveClass(/bg-cyan-600/);
+    await expect.poll(chartMaximum).toBe(4.6);
+
+    await page.locator('#btnDetail').click();
+    await expect(page.locator('#btnDetail')).toHaveClass(/bg-cyan-600/);
+    await expect.poll(chartMaximum).toBe(1.2);
+  });
 });

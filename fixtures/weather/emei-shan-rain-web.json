@@ -13,7 +13,8 @@
   "knownChecks": [
     { "description": "exact amount boundary", "amountThreshold": 0.1, "probabilityThreshold": 30, "expectedMatchingPointsAtLeast": 1 },
     { "description": "strict filter still has heavy rain", "amountThreshold": 1.0, "probabilityThreshold": 100, "expectedMatchingPointsAtLeast": 1 },
-    { "description": "strict filter still contains heavy rain", "amountThreshold": 1.0, "probabilityThreshold": 100, "note": "The fixture contains values above 1.0, so do not assume the chart is empty." }
+    { "description": "strict filter still contains heavy rain", "amountThreshold": 1.0, "probabilityThreshold": 100, "note": "The fixture contains values above 1.0, so do not assume the chart is empty." },
+    { "description": "6h and 24h views are visibly different", "detailMaximum": 1.2, "overviewMaximum": 4.6 }
   ],
   "hourly": {
     "precipitation": [0.1, 0.3, 0.5, 0.5, 0.5, 0.7, 0.4, 0.7, 0.6, 0.2, 0.4, 0.3, 2.0, 3.1, 2.6, 4.6, 1.2, 3.9, 0.1, 0.0, 0.0, 0.2, 0.3, 0.1, 0.7],
